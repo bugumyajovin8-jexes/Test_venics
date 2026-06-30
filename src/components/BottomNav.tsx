@@ -45,7 +45,7 @@ export default function BottomNav() {
           >
             <div className="relative w-6 h-6 flex items-center justify-center">
               {item.to === '/executive' ? (
-                <VenicsLogo size={24} animate="idle" />
+                <VenicsLogo size={24} animate="none" />
               ) : (
                 <item.icon className="w-6 h-6 shrink-0" />
               )}

@@ -17,15 +17,28 @@ body {
   }
 }
 
-/* Unlayered on purpose: must win over any Tailwind transition-* utility
-   (which lives in @layer utilities, a higher-priority layer than @layer base
-   regardless of selector specificity). An animated transform transition still
-   running on the exact element under the finger can make iOS Safari drop the
-   synthetic click after touchend, so the press-feedback scale must apply
-   instantly with zero transition duration. */
+/* Press feedback for taps.
+
+   IMPORTANT (iOS Safari click-drop bug): the press-feedback must NOT use
+   `transform` (scale, etc.). On iOS WebKit, a transform applied to the very
+   element under the finger at touchend time can make Safari fail to synthesize
+   the `click` event for that tap — the touchstart/touchend fire normally but
+   the click is silently dropped, so the button's onClick (e.g. bottom-nav
+   navigation) never runs and a second tap is needed. This was confirmed on a
+   real iPhone with on-screen TS/TE/CL counters: taps showed matching
+   touchstart+touchend with NO click ("drop"), recovering on the next tap.
+
+   Opacity is GPU-composited, never moves the element, and does not affect
+   hit-testing, so it gives clear press feedback with zero risk to click
+   synthesis. Unlayered on purpose so it wins over any Tailwind utility. */
 button:active,
 [role="button"]:active {
-  transform: scale(0.95);
+  opacity: 0.55;
+  /* Neutralize any transform-based press feedback (e.g. Tailwind's
+     `active:scale-95` used on various buttons throughout the app) — being
+     unlayered, this overrides Tailwind's utilities layer, so no button's tap
+     target is transformed at touchend, app-wide. */
+  transform: none;
   transition-duration: 0s;
 }
 

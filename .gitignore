@@ -9,3 +9,6 @@ coverage/
 !.env.example
 data/
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+.vite/
+Screenshots/
