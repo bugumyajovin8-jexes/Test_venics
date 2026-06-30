@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useRef, useCallback } from 'react';
 import { LayoutDashboard, Package, ShoppingCart, CreditCard, Menu, Zap } from 'lucide-react';
 import { useStore } from '../store';
 import VenicsLogo from './VenicsLogo';
@@ -6,6 +7,7 @@ import VenicsLogo from './VenicsLogo';
 export default function BottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
+  const lastNav = useRef(0);
 
   const user = useStore(state => state.user);
   const cart = useStore(state => state.cart);
@@ -22,6 +24,20 @@ export default function BottomNav() {
     { to: '/zaidi', icon: Menu, label: 'Zaidi' },
   ];
 
+  /* iOS Safari sometimes fails to synthesize click events after touchend,
+     causing buttons to need a double-tap. Using pointerup bypasses WebKit's
+     click-synthesis pipeline entirely — it fires directly from the native
+     touch without going through the synthesized-click path that can fail.
+     The 300ms debounce prevents the subsequent (sometimes synthesized) click
+     event from triggering a second navigation. */
+  const safeNavigate = useCallback((to: string) => {
+    const now = Date.now();
+    if (now - lastNav.current > 300) {
+      lastNav.current = now;
+      navigate(to);
+    }
+  }, [navigate]);
+
   return (
     <div
       className="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-[calc(4rem+env(safe-area-inset-bottom))] px-2 pb-[env(safe-area-inset-bottom)] z-50"
@@ -33,7 +49,8 @@ export default function BottomNav() {
         return (
           <button
             key={item.to}
-            onClick={() => navigate(item.to)}
+            onPointerUp={() => safeNavigate(item.to)}
+            onClick={() => safeNavigate(item.to)}
             className={`flex flex-col items-center justify-center w-full h-full space-y-1
               cursor-pointer touch-manipulation select-none
               ${isActive ? 'text-blue-600' : 'text-gray-500'}`}
