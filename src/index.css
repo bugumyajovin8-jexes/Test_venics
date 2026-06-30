@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer base {
+  button {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Unlayered on purpose: must win over any Tailwind transition-* utility
+   (which lives in @layer utilities, a higher-priority layer than @layer base
+   regardless of selector specificity). An animated transform transition still
+   running on the exact element under the finger can make iOS Safari drop the
+   synthetic click after touchend, so the press-feedback scale must apply
+   instantly with zero transition duration. */
+button:active,
+[role="button"]:active {
+  transform: scale(0.95);
+  transition-duration: 0s;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pt-safe-header {
+  padding-top: max(env(safe-area-inset-top, 0px), 12px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media all and (display-mode: standalone) {
+  .pt-safe-standalone {
+    padding-top: max(env(safe-area-inset-top, 0px), 24px);
+  }
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="sw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Venics Sales</title>
+    <script>
+      (function() {
+        window.__reactMounted = false;
+        window.addEventListener('error', function(e) {
+          if (e.message && (
+            e.message.indexOf('ChunkLoadError') > -1 || 
+            e.message.indexOf('Failed to fetch') > -1 ||
+            e.message.indexOf('script error') > -1
+          )) {
+            triggerRecovery("Chunk load error: " + e.message);
+          }
+        }, true);
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            var root = document.getElementById('root');
+            if (!window.__reactMounted && (!root || root.children.length === 0)) {
+              triggerRecovery("App failed to mount within 4 seconds");
+            }
+          }, 4000);
+        });
+        function triggerRecovery(reason) {
+          console.warn("Auto-recovery triggered: " + reason);
+          var now = Date.now();
+          var lastRecovery = localStorage.getItem('last_auto_recovery_time');
+          if (lastRecovery && (now - parseInt(lastRecovery, 10)) < 15000) {
+            console.error("Auto-recovery already triggered recently. Aborting to prevent loop.");
+            return;
+          }
+          localStorage.setItem('last_auto_recovery_time', now.toString());
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              var p = [];
+              for (var i = 0; i < regs.length; i++) { p.push(regs[i].unregister()); }
+              return Promise.all(p);
+            }).catch(function(err) {
+              console.error(err);
+            }).then(clearCaches);
+          } else {
+            clearCaches();
+          }
+          function clearCaches() {
+            if ('caches' in window) {
+              caches.keys().then(function(keys) {
+                var p = [];
+                for (var i = 0; i < keys.length; i++) { p.push(caches.delete(keys[i])); }
+                return Promise.all(p);
+              }).catch(function(err) {
+                console.error(err);
+              }).then(reloadPage);
+            } else {
+              reloadPage();
+            }
+          }
+          function reloadPage() {
+            var url = new URL(window.location.href);
+            url.searchParams.set('cv', Date.now().toString());
+            window.location.replace(url.href);
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

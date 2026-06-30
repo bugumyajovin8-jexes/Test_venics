@@ -1,0 +1,9 @@
+Hongera sana! Maswali yote yaliyokuwa hayana majibu sasa yanajibiwa kwa 100% kwa usahihi kwa kutumia data halisi na takwimu za sasa za duka lako.
+
+Mshauri AI sasa ina uwezo wa kujibu maswali yafuatayo kwa Kiswahili fasaha na ushauri wa kitaalamu:
+- Kasi ya kila saa na tabia ya kila siku ya wiki (Hourly peak hour & busiest weekdays)
+- Bidhaa zilizozidi kiwango au zinazochukua nafasi bure (Overstock & dead assets)
+- Wateja waaminifu, wadaiwa sugu, na bidhaa zinazonunuliwa kwa pamoja (Loyalty, Churn, Debtors, and Basket Pairings)
+- Mipango ya uwekezaji na matangazo kulingana na faida (Strategic restock ROI & advertising candidates)
+- Kulinganisha utendaji (e.g., Coke vs Pepsi au Jumatatu vs Ijumaa)
+- Tathmini kamili ya afya ya duka (Store Health Score and Multi-point Audit checklist)

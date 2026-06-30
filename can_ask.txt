@@ -1,0 +1,160 @@
+1) Sales & Billing (Most Common)
+
+Users will constantly ask about transactions:
+
+How do I make a sale?
+How do I add items to a cart?
+Can I apply a discount?
+How do I give a percentage discount?
+How do I give a fixed discount?
+Can I split payments?
+How do I record cash payment?
+How do I record mobile money (M-Pesa/Tigo Pesa/Airtel Money)?
+How do I issue a receipt?
+Can I reprint a receipt?
+How do I cancel a sale?
+How do I refund a customer?
+How do I edit a completed transaction?
+Why is my total wrong?
+How do I apply tax/VAT?
+2) Products & Inventory
+
+Core POS confusion usually happens here:
+
+How do I add a new product?
+How do I edit product price?
+How do I update stock quantity?
+How do I remove a product?
+How do I track stock levels?
+How do I see low-stock items?
+Can I get alerts when stock is low?
+How do I do stock taking?
+How do I record stock loss?
+How do I transfer stock between branches?
+Why is my stock not updating after sale?
+How do I add product categories?
+Can I add barcode scanning?
+How do I generate barcodes?
+3) Customers
+
+For CRM-lite features:
+
+How do I add a new customer?
+How do I find a customer record?
+How do I view customer purchase history?
+Can I give a customer credit?
+How do I track customer debt?
+How do I record customer payments?
+How do I apply customer discounts?
+Which customers buy the most?
+How do I export customer list?
+4) Reports & Analytics
+
+Business owners care deeply about this:
+
+How much did I sell today?
+What are my daily sales?
+What are my weekly/monthly reports?
+Which product is selling most?
+Which product is not selling?
+What is my profit today?
+What is my total revenue?
+How do I view sales by cashier?
+How do I export reports?
+Can I download sales as Excel/PDF?
+How do I see best customers?
+What time do I sell most?
+5) Cashier & Staff Management
+
+Important for multi-user POS:
+
+How do I add a cashier?
+How do I remove a staff member?
+How do I assign permissions?
+How do I restrict access?
+Can I track who made a sale?
+How do I see cashier performance?
+How do I reset cashier password?
+Can staff see reports?
+6) Payments & Cash Management
+
+This is where errors happen most:
+
+How do I record cash in drawer?
+How do I balance cash at end of day?
+Why is my cash difference?
+How do I do cash reconciliation?
+How do I record expenses?
+How do I record supplier payments?
+How do I track money in vs out?
+7) Errors & Troubleshooting (VERY IMPORTANT for chatbot)
+
+These are high-frequency chatbot queries:
+
+Why is my POS not working?
+Why is it slow?
+Why is sale not saving?
+Why is stock not updating?
+Why can't I print receipt?
+Printer not connecting
+Barcode scanner not working
+App crashed what do I do?
+Why can't I log in?
+Forgot password
+Internet not working in POS
+Data not syncing
+Why is my report blank?
+8) Setup & Configuration
+
+Onboarding questions:
+
+How do I set up my shop?
+How do I change business name?
+How do I change currency?
+How do I set tax rate?
+How do I configure receipt format?
+How do I connect printer?
+How do I connect barcode scanner?
+How do I enable offline mode?
+How do I back up data?
+9) Multi-Branch (If your POS supports scaling)
+How do I add a new branch?
+How do I manage multiple stores?
+Can I transfer stock between branches?
+Can I see branch-wise reports?
+How do I compare branch performance?
+10) Accounting / Business Intelligence (Advanced users)
+What is my profit and loss?
+What are my expenses?
+How do I calculate profit margin?
+What is my daily profit?
+How do I reconcile accounts?
+Can I export data to accounting software?
+11) Subscription / App Usage
+What plan am I on?
+How do I upgrade my plan?
+How do I renew subscription?
+What happens if my subscription expires?
+How do I cancel subscription?
+12) General “How-to” catch-all queries
+
+These are important for NLP fallback:
+
+How do I use this app?
+How does the POS work?
+Can you show me how to sell an item?
+What can I do with this system?
+Help me run my shop
+I need guidance
+13) Natural Language Business Questions (Very Important for AI chatbot)
+
+These are NOT feature-based but intent-based:
+
+How much money did I make today?
+What should I restock?
+Which product is trending?
+Am I making profit or loss?
+Who owes me money?
+What are my best-selling items?
+What should I promote?
+How is my business performing?
