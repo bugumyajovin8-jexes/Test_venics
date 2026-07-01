@@ -74,7 +74,7 @@ const ProductRow = ({
                   <button
                     onClick={tap(() => { setStockModalProduct(product); })}
                     onPointerUp={tap(() => { setStockModalProduct(product); })}
-                    className="bg-blue-100 text-blue-700 p-1 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none"
+                    className="bg-blue-100 text-blue-700 p-2.5 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none"
                     style={{
                       WebkitTapHighlightColor: 'transparent',
                       WebkitTouchCallout: 'none',
@@ -82,14 +82,14 @@ const ProductRow = ({
                     }}
                     title="Ongeza idadi ya bidhaa"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-5 h-5" />
                   </button>
                 )}
                 {canManageProducts && isExpiryEnabled && (
                   <button
                     onClick={tap(() => { setBatchModalProduct(product); })}
                     onPointerUp={tap(() => { setBatchModalProduct(product); })}
-                    className="bg-orange-100 text-orange-700 p-1 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none"
+                    className="bg-orange-100 text-orange-700 p-2.5 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none"
                     style={{
                       WebkitTapHighlightColor: 'transparent',
                       WebkitTouchCallout: 'none',
@@ -97,7 +97,7 @@ const ProductRow = ({
                     }}
                     title="Simamia tarehe za kuisha"
                   >
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-5 h-5" />
                   </button>
                 )}
                 {isLow && (
