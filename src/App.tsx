@@ -122,7 +122,18 @@ export default function App() {
       const hasCartItems = state.cart && state.cart.length > 0;
 
       if (isAtKikapu && hasCartItems) {
-        console.log('[SW] Update ready but sale in progress — reload deferred to version.json poll.');
+        // Sale in progress — flag it and reload as soon as the cart empties.
+        (window as any).__pendingSwUpdate = true;
+        console.log('[SW] Update ready but sale in progress — will reload when cart clears.');
+
+        const unsubscribe = useStore.subscribe((s) => {
+          if (s.cart.length === 0 && (window as any).__pendingSwUpdate) {
+            (window as any).__pendingSwUpdate = false;
+            unsubscribe();
+            console.log('[SW] Cart cleared after deferred update — reloading now.');
+            window.location.reload();
+          }
+        });
         return;
       }
 
@@ -525,7 +536,7 @@ export default function App() {
     };
 
     checkStatus();
-    const interval = setInterval(checkStatus, 180000);
+    const interval = setInterval(checkStatus, 600000); // 10 min — saves ~320 API calls/day vs 3 min
     return () => clearInterval(interval);
   }, [isAuthenticated, user?.id, user?.role, user?.shop_id, user?.email, logout, updateUser]);
 
