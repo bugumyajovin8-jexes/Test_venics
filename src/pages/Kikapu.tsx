@@ -223,7 +223,11 @@ export default function Kikapu() {
       } else {
         newVal = newVal + key;
       }
-      
+
+      if (prev.type === 'price' && newVal.length > 10) {
+        return prev;
+      }
+
       if (prev.type === 'qty') {
         const parsed = parseInt(newVal, 10) || 0;
         if (prev.maxStock !== undefined && parsed > prev.maxStock) {
@@ -409,7 +413,12 @@ export default function Kikapu() {
     }
 
     if (currentCart.length === 0 || !user) return;
-    
+
+    if (currentCartTotal <= 0) {
+      showToast('Jumla ya mauzo lazima iwe zaidi ya sifuri.', 'error');
+      return;
+    }
+
     if (paymentMethod === 'credit' && !customerName) {
       showToast('Tafadhali weka jina la mteja kwa mauzo ya mkopo.', 'error');
       return;
@@ -454,6 +463,7 @@ export default function Kikapu() {
 
     const discountsToLog: any[] = [];
     const anomaliesHeavyDiscountToLog: any[] = [];
+    let fakeDebtAnomalyDetails: object | null = null;
 
     try {
       // Update stock and save sale atomically
@@ -500,13 +510,13 @@ export default function Kikapu() {
           
           // Anomaly: Large debt sale to vaguely named customer with no phone
           if (totalCartAmt > 10000 && (!customerPhone || customerPhone.trim().length < 9) && nameWords <= 1) {
-            await SyncService.logAction('anomaly_fake_debt', {
+            fakeDebtAnomalyDetails = {
               sale_id: saleId,
               amount: totalCartAmt,
               employee_name: user?.name || 'Mhudumu',
               customer_name: customerName,
               warning: `Mauzo ya deni kubwa (${currentCartTotal.toLocaleString()}) kwa mteja asiye na namba ya simu kamili au jina linaloeleweka (${customerName}). Hii inahitaji ukaguzi kuzuia mtaji kufichwa kwenye madeni hewa.`
-            });
+            };
           }
         }
 
@@ -571,6 +581,10 @@ export default function Kikapu() {
           }
         }
       });
+
+      if (fakeDebtAnomalyDetails) {
+        await SyncService.logAction('anomaly_fake_debt', fakeDebtAnomalyDetails);
+      }
 
       if (discountsToLog.length > 0) {
         const totalOriginalPrice = discountsToLog.reduce((sum, d) => sum + d.original_price, 0);

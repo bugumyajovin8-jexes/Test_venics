@@ -196,14 +196,30 @@ export default function App() {
   const settings = useLiveQuery(() => db.settings.get(1));
   const syncStatus = useStore(state => state.syncStatus);
 
-  // Load tables for reactive in-app notifications checks
-  const productsResult = useLiveQuery(() => db.products.where('isDeleted').equals(0).toArray());
+  // Load tables for reactive in-app notifications checks.
+  // Each query is scoped to the current shop and capped to avoid loading unbounded history.
+  const productsResult = useLiveQuery(
+    () => user?.shopId ? db.products.where('[shop_id+isDeleted]').equals([user.shopId, 0]).toArray() : Promise.resolve([]),
+    [user?.shopId]
+  );
   const licenseResult = useLiveQuery(() => db.license.get(1));
-  const expensesResult = useLiveQuery(() => db.expenses.where('isDeleted').equals(0).toArray());
-  const auditLogsResult = useLiveQuery(() => db.auditLogs.where('isDeleted').equals(0).toArray());
-  const salesResult = useLiveQuery(() => db.sales.where('isDeleted').equals(0).toArray());
+  const expensesResult = useLiveQuery(
+    () => user?.shopId ? db.expenses.where('[shop_id+isDeleted]').equals([user.shopId, 0]).limit(5000).toArray() : Promise.resolve([]),
+    [user?.shopId]
+  );
+  const auditLogsResult = useLiveQuery(
+    () => user?.shopId ? db.auditLogs.where('[shop_id+isDeleted]').equals([user.shopId, 0]).reverse().limit(200).toArray() : Promise.resolve([]),
+    [user?.shopId]
+  );
+  const salesResult = useLiveQuery(
+    () => user?.shopId ? db.sales.where('[shop_id+isDeleted]').equals([user.shopId, 0]).limit(5000).toArray() : Promise.resolve([]),
+    [user?.shopId]
+  );
   const usersResult = useLiveQuery(() => db.users.toArray());
-  const debtPaymentsResult = useLiveQuery(() => db.debtPayments.where('isDeleted').equals(0).toArray());
+  const debtPaymentsResult = useLiveQuery(
+    () => user?.shopId ? db.debtPayments.where('shop_id').equals(user.shopId).filter(p => p.isDeleted === 0).limit(5000).toArray() : Promise.resolve([]),
+    [user?.shopId]
+  );
 
   const addNotificationList = useStore(state => state.addNotificationList);
 

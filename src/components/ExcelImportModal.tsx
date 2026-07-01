@@ -188,11 +188,11 @@ export default function ExcelImportModal({ isOpen, onClose, shopId }: ExcelImpor
         let sellPrice = sanitizeNumber(sellPriceRaw);
 
         // Step 4: Price Checks
-        if (buyPrice === 0 && options.rejectEmptyBuyPrice) {
-          throw new Error('Bei ya kununua ni sifuri au imekosekana');
+        if (buyPrice <= 0 && options.rejectEmptyBuyPrice) {
+          throw new Error('Bei ya kununua ni sifuri, hasi, au imekosekana');
         }
-        if (sellPrice === 0 && options.rejectEmptySellPrice) {
-          throw new Error('Bei ya kuuza ni sifuri au imekosekana');
+        if (sellPrice <= 0 && options.rejectEmptySellPrice) {
+          throw new Error('Bei ya kuuza ni sifuri, hasi, au imekosekana');
         }
 
         const stock = sanitizeNumber(row[mapping.stock]);
@@ -288,7 +288,9 @@ export default function ExcelImportModal({ isOpen, onClose, shopId }: ExcelImpor
         return product;
       });
 
-      await db.products.bulkPut(productsToSave);
+      await db.transaction('rw', db.products, async () => {
+        await db.products.bulkPut(productsToSave);
+      });
       successCount += productsToSave.length;
       
       const currentProgress = 30 + Math.round(((i + chunk.length) / totalToSave) * 70);
