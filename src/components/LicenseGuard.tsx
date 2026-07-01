@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { LicenseService, LicenseStatus } from '../services/license';
 import { AlertTriangle, Wifi, Lock, CalendarX, Phone, RefreshCw } from 'lucide-react';
 import { useStore } from '../store';
+import { supabase } from '../supabase';
 
 export default function LicenseGuard({ children }: { children: React.ReactNode }) {
   const user = useStore(state => state.user);
@@ -30,10 +31,15 @@ export default function LicenseGuard({ children }: { children: React.ReactNode }
       showToast('Hakuna mtandao (Offline). Tafadhali washa data au WiFi kwanza.', 'error');
       return;
     }
-    
+
     setSyncing(true);
     try {
       showToast('Inahakiki huduma...', 'info');
+
+      // Ensure trial exists on server (idempotent — won't duplicate if already present).
+      // Handles the case where the init-license call during setup-shop failed.
+      await supabase.functions.invoke('init-license').catch(console.warn);
+
       LicenseService.clearStatusCache();
       await LicenseService.syncLicense(true);
       LicenseService.clearStatusCache();

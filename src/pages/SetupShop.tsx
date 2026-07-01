@@ -77,7 +77,16 @@ export default function SetupShop() {
 
       if (userError) throw userError;
 
-      // 3. Update local state
+      // 3. Initialize 14-day free trial via Edge Function (idempotent — safe to retry)
+      try {
+        const { error: licenseError } = await supabase.functions.invoke('init-license');
+        if (licenseError) console.warn('[SetupShop] License init warning:', licenseError);
+      } catch (licenseErr) {
+        // Non-fatal: LicenseGuard will call init-license again when user hits "Hakiki Huduma"
+        console.warn('[SetupShop] License init failed, will retry on next verify:', licenseErr);
+      }
+
+      // 4. Update local state
       const updatedUser = {
         ...user,
         shop_id: shopId,
@@ -89,13 +98,13 @@ export default function SetupShop() {
       };
 
       await db.users.put(updatedUser as any);
-      
+
       // Navigate BEFORE updating auth to prevent unmount from cancelling the navigation
       navigate('/executive', { replace: true });
-      
+
       setAuth(token, updatedUser);
-      
-      // 4. Initial sync
+
+      // 5. Initial sync
       SyncService.sync().catch(console.error);
     } catch (err: any) {
       console.error('Setup shop error:', err);

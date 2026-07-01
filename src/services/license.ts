@@ -27,8 +27,9 @@ const DATE_ROLLBACK_TOLERANCE_MS = 2 * 60 * 1000; // 2 minutes
 const LOCAL_STATUS_CACHE_MS = 5_000;
 const LICENSE_SYNC_MIN_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours
 // Maximum time the app will run on a cached license without re-verifying with the server.
-// After this period offline, the app blocks until it can reach the server.
-const MAX_OFFLINE_GRACE_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+// After this period offline the app blocks until it can reach the server.
+// 30 days accommodates genuinely offline users; syncs happen every 12h when online.
+const MAX_OFFLINE_GRACE_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 export class LicenseService {
   private static syncPromise: Promise<void> | null = null;
