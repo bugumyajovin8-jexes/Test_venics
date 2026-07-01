@@ -10,7 +10,8 @@ export type LicenseStatus =
   | 'BLOCKED'
   | 'DATE_MANIPULATED'
   | 'SYNC_REQUIRED'
-  | 'TAMPERED';
+  | 'TAMPERED'
+  | 'NO_LICENSE';
 
 type RemoteLicenseRow = {
   id?: string;
@@ -21,11 +22,13 @@ type RemoteLicenseRow = {
   updated_at?: string;
 };
 
-const TRIAL_DAYS = 14;
-const MAX_CLOCK_DRIFT_MS = 60 * 60 * 1000; // 1 hour
+const MAX_CLOCK_DRIFT_MS = 60 * 60 * 1000;       // 1 hour
 const DATE_ROLLBACK_TOLERANCE_MS = 2 * 60 * 1000; // 2 minutes
 const LOCAL_STATUS_CACHE_MS = 5_000;
-const LICENSE_SYNC_MIN_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours (cache heavily!)
+const LICENSE_SYNC_MIN_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours
+// Maximum time the app will run on a cached license without re-verifying with the server.
+// After this period offline, the app blocks until it can reach the server.
+const MAX_OFFLINE_GRACE_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 export class LicenseService {
   private static syncPromise: Promise<void> | null = null;
@@ -33,30 +36,13 @@ export class LicenseService {
   private static lastStatusCache: { checkedAt: number; status: { status: LicenseStatus; daysRemaining: number } } | null = null;
 
   private static getLicensePayload(license: Partial<License>): string {
-    // Keep this small and deterministic.
     return `${license.deviceId}-${license.startDate}-${license.expiryDate}-${license.isActive}`;
   }
 
-  static async getLocalLicense() {
-    let license = await db.license.get(1);
-    if (license) return license;
-
-    const user = useStore.getState().user;
-    if (!user?.shopId && user?.role !== 'boss') return null;
-
-    const now = Date.now();
-    const newLicense: Partial<License> = {
-      id: 1,
-      deviceId: uuidv4(),
-      startDate: now,
-      expiryDate: now + TRIAL_DAYS * 24 * 60 * 60 * 1000,
-      isActive: true,
-      lastVerifiedAt: now,
-    };
-
-    newLicense.signature = generateHMAC(this.getLicensePayload(newLicense));
-    await db.license.add(newLicense as License);
-    return newLicense as License;
+  // Returns the locally cached license record, or null if none exists.
+  // NEVER creates a trial — only the superadmin app can issue licenses via Supabase.
+  static async getLocalLicense(): Promise<License | null> {
+    return (await db.license.get(1)) ?? null;
   }
 
   static async checkStatus(): Promise<{ status: LicenseStatus; daysRemaining: number }> {
@@ -67,33 +53,55 @@ export class LicenseService {
 
     const user = useStore.getState().user;
     if (!user?.shopId) {
-      const result = { status: 'VALID' as LicenseStatus, daysRemaining: TRIAL_DAYS };
+      // No shop yet (setup-shop flow) — allow through
+      const result = { status: 'VALID' as LicenseStatus, daysRemaining: 9999 };
       this.lastStatusCache = { checkedAt: now, status: result };
       return result;
     }
 
     const license = await this.getLocalLicense();
     if (!license) {
-      const result = { status: 'SYNC_REQUIRED' as LicenseStatus, daysRemaining: TRIAL_DAYS };
+      // No cached license at all — must connect to server to receive one
+      const result = { status: 'SYNC_REQUIRED' as LicenseStatus, daysRemaining: 0 };
+      this.lastStatusCache = { checkedAt: now, status: result };
+      return result;
+    }
+
+    // Offline grace period: block if too long since last server verification.
+    // This prevents perpetual offline use after a license expires or is revoked.
+    const lastSyncStr = localStorage.getItem('last_license_sync_success_at');
+    const lastSync = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
+    if (now - lastSync > MAX_OFFLINE_GRACE_MS) {
+      const result = { status: 'SYNC_REQUIRED' as LicenseStatus, daysRemaining: 0 };
       this.lastStatusCache = { checkedAt: now, status: result };
       return result;
     }
 
     const daysRemaining = Math.ceil((license.expiryDate - now) / (24 * 60 * 60 * 1000));
-    const currentPayload = this.getLicensePayload(license);
 
+    // HMAC integrity check (defense-in-depth against IndexedDB tampering)
+    const currentPayload = this.getLicensePayload(license);
     if (!license.signature || !verifyHMAC(currentPayload, license.signature)) {
       const result = { status: 'TAMPERED' as LicenseStatus, daysRemaining };
       this.lastStatusCache = { checkedAt: now, status: result };
       return result;
     }
 
+    // Explicitly blocked by superadmin
     if (!license.isActive) {
       const result = { status: 'BLOCKED' as LicenseStatus, daysRemaining };
       this.lastStatusCache = { checkedAt: now, status: result };
       return result;
     }
 
+    // Superadmin has not issued any license for this shop
+    if (license.expiryDate === 0) {
+      const result = { status: 'NO_LICENSE' as LicenseStatus, daysRemaining: 0 };
+      this.lastStatusCache = { checkedAt: now, status: result };
+      return result;
+    }
+
+    // Device clock was rolled back
     if (now < license.lastVerifiedAt - DATE_ROLLBACK_TOLERANCE_MS) {
       const result = { status: 'DATE_MANIPULATED' as LicenseStatus, daysRemaining };
       this.lastStatusCache = { checkedAt: now, status: result };
@@ -106,6 +114,7 @@ export class LicenseService {
       return result;
     }
 
+    // Update the local lastVerifiedAt timestamp
     if (now > license.lastVerifiedAt) {
       await db.license.update(1, { lastVerifiedAt: now });
     }
@@ -127,14 +136,12 @@ export class LicenseService {
     if (this.syncPromise) return this.syncPromise;
 
     if (!force) {
-      // Persistently cache the last successful sync in localStorage to avoid network requests on reload
       const lastSyncStr = localStorage.getItem('last_license_sync_success_at');
       const lastSyncTime = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
-      
       if (now - lastSyncTime < LICENSE_SYNC_MIN_INTERVAL_MS) return;
     }
 
-    if (!force && now - this.lastSyncStartedAt < 60000) return; // Prevent double trigger in-memory
+    if (!force && now - this.lastSyncStartedAt < 60000) return;
     this.lastSyncStartedAt = now;
 
     this.syncPromise = this.doSyncLicense(force);
@@ -154,20 +161,8 @@ export class LicenseService {
     if (!user?.shopId) return;
 
     const shopId = user.shopId;
-    const localLicense = await this.getLocalLicense();
-    if (!localLicense) return;
 
     try {
-      // Setup queries
-      const licenseQuery = supabase
-        .from('licenses')
-        .select('*')
-        .eq('shop_id', shopId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // Check for cached server time offset to completely bypass get_server_time RPC in most hours
       const cachedOffsetStr = localStorage.getItem('server_time_offset');
       const offsetExpiryStr = localStorage.getItem('server_time_offset_expiry');
       let offset = 0;
@@ -181,6 +176,14 @@ export class LicenseService {
           shouldFetchServerTime = false;
         }
       }
+
+      const licenseQuery = supabase
+        .from('licenses')
+        .select('*')
+        .eq('shop_id', shopId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       let licenseRes;
       let serverTimeRes = null;
@@ -198,9 +201,8 @@ export class LicenseService {
         return;
       }
 
-      // Handle server time caching: cache the offset for up to 24 hours
       let serverTime = now + offset;
-      if (shouldFetchServerTime && serverTimeRes && serverTimeRes.data) {
+      if (shouldFetchServerTime && serverTimeRes?.data) {
         const fetchedServerTime = new Date(serverTimeRes.data).getTime();
         offset = fetchedServerTime - now;
         localStorage.setItem('server_time_offset', offset.toString());
@@ -208,51 +210,47 @@ export class LicenseService {
         serverTime = fetchedServerTime;
       }
 
-      const remote = (licenseRes.data ?? null) as RemoteLicenseRow | null;
-      const localTime = Date.now();
-
-      if (Math.abs(serverTime - localTime) > MAX_CLOCK_DRIFT_MS) {
-        console.warn('Significant time drift detected between server and local clock');
+      if (Math.abs(serverTime - Date.now()) > MAX_CLOCK_DRIFT_MS) {
+        console.warn('[License] Significant clock drift detected between server and device');
       }
 
+      const existingLocal = await db.license.get(1);
+      const deviceId = existingLocal?.deviceId ?? uuidv4();
+      const remote = (licenseRes.data ?? null) as RemoteLicenseRow | null;
+
       if (remote) {
-        const updatedLicense: Partial<License> = {
+        // Server has a license issued by superadmin — write it locally.
+        // This app NEVER creates or modifies the remote license record.
+        const updated: Partial<License> = {
+          id: 1,
+          deviceId,
+          startDate: existingLocal?.startDate ?? serverTime,
           expiryDate: new Date(remote.expiry_date).getTime(),
           isActive: remote.status?.toLowerCase() === 'active',
           lastVerifiedAt: serverTime,
         };
-
-        const mergedLicense = { ...localLicense, ...updatedLicense };
-        updatedLicense.signature = generateHMAC(this.getLicensePayload(mergedLicense));
-
-        await db.license.update(1, updatedLicense);
-        if (force) {
-          this.clearStatusCache();
-        }
-        return;
+        updated.signature = generateHMAC(this.getLicensePayload(updated));
+        await db.license.put(updated as License);
+      } else {
+        // No license found for this shop — superadmin has not issued one yet
+        // (or it was revoked). Write a blocked state so the guard blocks even offline.
+        const blocked: Partial<License> = {
+          id: 1,
+          deviceId,
+          startDate: 0,
+          expiryDate: 0,
+          isActive: false,
+          lastVerifiedAt: serverTime,
+        };
+        blocked.signature = generateHMAC(this.getLicensePayload(blocked));
+        await db.license.put(blocked as License);
       }
 
-      // If no remote license exists, create or replace one safely.
-      const payload = {
-        shop_id: shopId,
-        status: 'active',
-        expiry_date: new Date(localLicense.expiryDate).toISOString(),
-        created_at: new Date(localLicense.startDate).toISOString(),
-      };
-
-      const { error: upsertError } = await supabase
-        .from('licenses')
-        .upsert(payload, { onConflict: 'shop_id' });
-
-      if (upsertError) {
-        console.error('Error creating remote license:', upsertError);
+      if (force) {
+        this.clearStatusCache();
       }
-
-      const updated: Partial<License> = { lastVerifiedAt: serverTime };
-      updated.signature = generateHMAC(this.getLicensePayload({ ...localLicense, ...updated }));
-      await db.license.update(1, updated);
     } catch (e) {
-      console.error('License sync failed', e);
+      console.error('[License] Sync failed:', e);
     }
   }
 

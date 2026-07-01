@@ -105,11 +105,15 @@ export default function LicenseGuard({ children }: { children: React.ReactNode }
     if (status === 'EXPIRED') {
       icon = <CalendarX className="w-16 h-16 text-red-500 mb-4" />;
       title = 'Mfumo Umeishiwa Muda';
-      message = 'Muda wa kutumia Mfumo kwenye duka lako umekwisha. Tafadhali wasiliana na msimamizi wako ili kuendelea kutoa huduma.';
+      message = 'Muda wa kutumia Mfumo kwenye duka lako umekwisha. Tafadhali wasiliana na msimamizi wetu ili kuendelea kutoa huduma.';
+    } else if (status === 'NO_LICENSE') {
+      icon = <Lock className="w-16 h-16 text-gray-500 mb-4" />;
+      title = 'Duka Halijasajiliwa';
+      message = 'Duka lako bado halijapewa ruhusa ya kutumia mfumo huu. Tafadhali wasiliana na msimamizi wetu ili kusajiliwa.';
     } else if (status === 'SYNC_REQUIRED') {
       icon = <Wifi className="w-16 h-16 text-orange-500 mb-4" />;
-      title = 'Unganisha Mtandao';
-      message = 'Mfumo unahitaji mtandao kuhakiki hali ya huduma. Tafadhali washa data au WiFi.';
+      title = 'Uhakiki wa Mtandao Unahitajika';
+      message = 'Mfumo unahitaji mtandao kuhakiki hali ya huduma. Tafadhali washa data au WiFi, kisha bonyeza "Hakiki Huduma Sasa".';
     } else if (status === 'DATE_MANIPULATED') {
       icon = <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />;
       title = 'Tarehe Sio Sahihi';
@@ -117,7 +121,7 @@ export default function LicenseGuard({ children }: { children: React.ReactNode }
     } else if (status === 'TAMPERED') {
       icon = <AlertTriangle className="w-16 h-16 text-red-600 mb-4" />;
       title = 'Hitilafu ya Usalama';
-      message = 'Mfumo umegundua hitilafu kwenye utambulisho wa duka. Tafadhali wasiliana na msimamizi wako.';
+      message = 'Mfumo umegundua hitilafu kwenye utambulisho wa duka. Tafadhali wasiliana na msimamizi wetu.';
     }
 
     return (
@@ -153,7 +157,7 @@ export default function LicenseGuard({ children }: { children: React.ReactNode }
           </div>
         )}
 
-        {(status === 'EXPIRED' || status === 'BLOCKED') && (
+        {(status === 'EXPIRED' || status === 'BLOCKED' || status === 'NO_LICENSE') && (
            <a 
              href="tel:0787979273"
              className="bg-green-500 shadow-xl shadow-green-500/30 text-white px-8 py-3 rounded-xl font-bold transition-all mb-4 flex items-center justify-center gap-2 active:scale-95 w-full max-w-sm"

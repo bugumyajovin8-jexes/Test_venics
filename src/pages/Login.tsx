@@ -93,9 +93,12 @@ export default function Login() {
         throw new Error('Akaunti yako haijakamilika. Tafadhali wasiliana na msimamizi wako.');
       }
 
+      if (userData.role === 'superadmin')
+        throw new Error('Programu hii haifai kwa superadmin. Tumia programu maalum ya usimamizi wa Venics.');
+
       if (userData.status === 'blocked')
         throw new Error('Akaunti yako imezuiwa (Blocked). Tafadhali wasiliana na msimamizi wako ili kufunguliwa.');
-      
+
       if (userData.status !== 'active')
         throw new Error('Akaunti yako haijaruhusiwa kutumika. Tafadhali wasiliana na msimamizi wako.');
 
