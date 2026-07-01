@@ -249,7 +249,7 @@ export default function App() {
 
     // 2. Check Audit log anomaly (Security - 2nd Priority)
     if (!targetNotification && auditLogsResult && auditLogsResult.length > 0) {
-      const bossIds = usersResult?.filter(u => u.role === 'boss' || u.role === 'admin').map(u => u.id) || [];
+      const bossIds = usersResult?.filter(u => u.role === 'boss').map(u => u.id) || [];
       const recentAnomalies = auditLogsResult
         .filter(log => log.action?.startsWith('anomaly_') || log.action?.includes('delete') || log.action?.includes('update'))
         .filter(log => !bossIds.includes(log.user_id))
@@ -419,7 +419,7 @@ export default function App() {
   }, [user?.shopId]);
 
   useEffect(() => {
-    const isBoss = user?.role === 'admin' || user?.role === 'boss';
+    const isBoss = user?.role === 'boss';
     if (isAuthenticated && isBoss) {
       notifications.requestPermission();
       notifications.startService();
@@ -685,7 +685,7 @@ export default function App() {
   }
 
   const needsShopSetup = !user?.shop_id;
-  const isBoss = user?.role === 'admin' || user?.role === 'boss';
+  const isBoss = user?.role === 'boss';
 
   return (
     <ErrorBoundary>

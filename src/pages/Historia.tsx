@@ -1103,7 +1103,7 @@ export default function Historia() {
       </div>
 
       {/* View Toggle */}
-      {(user?.role === 'admin' || user?.role === 'boss') && (
+      {(user?.role === 'boss') && (
         <div className="flex bg-gray-200 p-1 rounded-xl mb-6">
           <button
             onClick={tap(() => { setView('risiti'); })}
@@ -1160,13 +1160,13 @@ export default function Historia() {
                 <p className="text-base font-bold text-purple-600 break-all">{filteredSales.length}</p>
               </div>
             )}
-            {(user?.role === 'admin' || user?.role === 'boss') && (
+            {(user?.role === 'boss') && (
               <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex-1 min-w-[130px]">
                 <p className="text-xs text-gray-500 mb-1">Jumla ya Faida</p>
                 <p className="text-base font-bold text-green-600 break-all">{formatCurrency(totalProfit, currency)}</p>
               </div>
             )}
-            {(user?.role === 'admin' || user?.role === 'boss') && showNetProfit && (
+            {(user?.role === 'boss') && showNetProfit && (
               <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 shadow-sm w-full">
                 <div className="flex justify-between items-center flex-wrap gap-2">
                   <div>
@@ -1219,7 +1219,7 @@ export default function Historia() {
                       {hasMapatoAccess && (
                         <div className="font-bold text-gray-900">{formatCurrency(sale.total_amount, currency)}</div>
                       )}
-                      {(user?.role === 'admin' || user?.role === 'boss') && (
+                      {(user?.role === 'boss') && (
                         <div className="text-xs text-green-600 mb-2">Faida: {formatCurrency(sale.total_profit, currency)}</div>
                       )}
                       
@@ -1449,7 +1449,7 @@ export default function Historia() {
                               <p className="text-lg font-bold text-gray-900">{formatCurrency(report.mapato, currency)}</p>
                             </div>
                           )}
-                          {(user?.role === 'admin' || user?.role === 'boss') && (
+                          {(user?.role === 'boss') && (
                             <>
                               <div>
                                 <p className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Jumla ya Faida</p>

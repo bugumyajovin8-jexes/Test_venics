@@ -13,7 +13,7 @@ export default function BottomNav() {
   const cart = useStore(state => state.cart);
   const cartCount = cart.reduce((acc, item) => acc + item.qty, 0);
 
-  const isBoss = user?.role === 'admin' || user?.role === 'boss';
+  const isBoss = user?.role === 'boss';
 
   const navItems = [
     ...(isBoss ? [{ to: '/executive', icon: Zap, label: 'V Smart' }] : []),

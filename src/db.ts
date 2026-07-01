@@ -23,7 +23,7 @@ export interface User {
   email: string;
   name: string;
   phone?: string;
-  role: 'admin' | 'employee' | 'staff' | 'boss' | 'manager' | 'cashier'; // 'boss' (aka 'admin') vs employee sub-roles
+  role: 'boss' | 'employee';
   status: 'active' | 'blocked';
   isActive?: boolean; // Alias for compatibility
   last_seen?: string;

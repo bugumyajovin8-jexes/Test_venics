@@ -65,7 +65,7 @@ export default function EmployeeReports({ onClose }: { onClose: () => void }) {
     return db.users.where('shop_id').equals(user.shopId).toArray();
   }, [user?.shopId]) || [];
 
-  const employees = users.filter(u => u.role !== 'admin' && u.role !== 'boss');
+  const employees = users.filter(u => u.role !== 'boss');
 
   // Optimized: Calculate start of the date range from selection to prevent pulling redundant historical periods
   const minDateIso = useMemo(() => {

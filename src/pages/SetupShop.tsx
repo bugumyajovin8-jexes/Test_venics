@@ -148,7 +148,7 @@ export default function SetupShop() {
           
           await db.users.put(updatedUser as any);
           
-          const isUserBoss = updatedUser.role === 'admin' || updatedUser.role === 'boss';
+          const isUserBoss = updatedUser.role === 'boss';
           navigate(isUserBoss ? '/executive' : '/dashibodi', { replace: true });
           
           setAuth(token!, updatedUser);

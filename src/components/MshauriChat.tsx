@@ -437,8 +437,7 @@ function EmployeeBreakdownResponse({
     }
   };
 
-  // Filter employees (exclude boss/admin, to keep report for staff/cashiers/managers)
-  const displayUsers = users.filter(u => u.role !== 'boss' && u.role !== 'admin');
+  const displayUsers = users.filter(u => u.role !== 'boss');
   const fallbackUsers = displayUsers.length > 0 ? displayUsers : users.slice(0, 5); // Fallback to first 5 if no specific employees found
 
   return (
@@ -2577,7 +2576,7 @@ export default function MshauriChat() {
       if (!u.name) return false;
       const uNameParts = u.name.toLowerCase().split(/\s+/).filter(part => part.length >= 2);
       return uNameParts.some(part => {
-        if (part === 'boss' || part === 'admin') return false;
+        if (part === 'boss') return false;
         const regex = new RegExp(`\\b${part}\\b`, 'i');
         return cleanText.match(regex);
       });

@@ -100,7 +100,7 @@ export default function Register() {
       }
 
       // Navigate BEFORE setting auth State so that component is mounted
-      const isUserBoss = localUser.role === 'admin' || localUser.role === 'boss';
+      const isUserBoss = localUser.role === 'boss';
       if (localUser.shop_id) {
           navigate(isUserBoss ? '/executive' : '/', { replace: true });
       } else {

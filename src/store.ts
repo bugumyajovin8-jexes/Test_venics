@@ -175,7 +175,7 @@ export const useStore = create<PosState>((set, get) => ({
   },
   isBoss: () => {
     const user = get().user;
-    return user?.role === 'admin' || user?.role === 'boss';
+    return user?.role === 'boss';
   },
   
   modal: {

@@ -182,7 +182,7 @@ export default function Matumizi() {
   };
 
   const handleDelete = (id: string) => {
-    const isBoss = user?.role === 'admin' || user?.role === 'boss';
+    const isBoss = user?.role === 'boss';
     if (!isBoss) {
       showAlert('Kizuizi', 'Huna ruhusa ya kufuta matumizi haya.');
       return;
@@ -438,7 +438,7 @@ export default function Matumizi() {
                         </div>
                         <div className="text-right flex flex-col items-end">
                           <div className="font-bold text-red-600">{formatCurrency(expense.amount, currency)}</div>
-                          {(user?.role === 'admin' || user?.role === 'boss') && (
+                          {(user?.role === 'boss') && (
                             <button
                               onClick={tap(() => expense.id && handleDelete(expense.id))}
                               onPointerUp={tap(() => expense.id && handleDelete(expense.id))}

@@ -381,7 +381,7 @@ export default function Dashibodi() {
             <div className="text-lg font-bold break-all">{formatCurrency(calcTotal(todaySales), currency)}</div>
           </div>
         )}
-        {(user?.role === 'admin' || user?.role === 'boss') ? (
+        {(user?.role === 'boss') ? (
           <div className="bg-green-500 text-white p-4 rounded-2xl shadow-sm flex-1 min-w-[140px]">
             <div className="flex items-center space-x-2 opacity-80 mb-1">
               <TrendingUp className="w-4 h-4" />
@@ -479,13 +479,13 @@ export default function Dashibodi() {
               <p className="text-lg font-bold text-purple-600 break-all">{monthSales.length}</p>
             </div>
           )}
-          {(user?.role === 'admin' || user?.role === 'boss') && (
+          {(user?.role === 'boss') && (
             <div className="flex-1 min-w-[120px]">
               <p className="text-sm text-gray-500">Faida</p>
               <p className="text-lg font-bold text-green-600 break-all">{formatCurrency(calcProfit(monthSales), currency)}</p>
             </div>
           )}
-          {(user?.role === 'admin' || user?.role === 'boss') && (
+          {(user?.role === 'boss') && (
             <div className="w-full pt-3 border-t border-gray-50 flex justify-between items-center flex-wrap gap-2">
               <div>
                 <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Faida Halisi</p>

@@ -77,7 +77,7 @@ class NotificationService {
 
   public async checkAndSendPulse() {
     const user = useStore.getState().user;
-    const isBoss = user?.role === 'admin' || user?.role === 'boss';
+    const isBoss = user?.role === 'boss';
     if (!isBoss) return;
 
     const now = new Date();
@@ -140,7 +140,7 @@ class NotificationService {
 
   public async checkAndSendMaster() {
     const user = useStore.getState().user;
-    const isBoss = user?.role === 'admin' || user?.role === 'boss';
+    const isBoss = user?.role === 'boss';
     if (!isBoss) return;
 
     const now = new Date();
@@ -177,7 +177,7 @@ class NotificationService {
 
   public async sendAuditAlert(saleAmount: number, employeeName: string) {
     const user = useStore.getState().user;
-    const isBoss = user?.role === 'admin' || user?.role === 'boss';
+    const isBoss = user?.role === 'boss';
     if (!isBoss) return;
 
     this.sendNotification(
@@ -205,7 +205,7 @@ class NotificationService {
 
   public async checkAndSendLicenseExpiry() {
     const user = useStore.getState().user;
-    const isBoss = user?.role === 'admin' || user?.role === 'boss';
+    const isBoss = user?.role === 'boss';
     if (!isBoss) return;
 
     const now = new Date();

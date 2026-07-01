@@ -412,7 +412,7 @@ export default function ExecutiveDashboard() {
     };
   }, [sales, products, saleItems, auditLogs, users]);
 
-  if (user?.role !== 'admin' && user?.role !== 'boss') {
+  if (user?.role !== 'boss') {
     return (
       <div className="flex flex-col items-center justify-center h-full p-6 text-center">
         <AlertCircle className="w-16 h-16 text-red-500 mb-4" />

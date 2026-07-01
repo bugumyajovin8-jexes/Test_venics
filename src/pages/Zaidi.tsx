@@ -36,7 +36,7 @@ export default function Zaidi() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [staffEmail, setStaffEmail] = useState('');
   const [staffName, setStaffName] = useState('');
-  const [staffRole, setStaffRole] = useState<'employee' | 'staff' | 'manager' | 'cashier'>('employee');
+  const [staffRole, setStaffRole] = useState<'employee'>('employee');
   const [isAddingStaff, setIsAddingStaff] = useState(false);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -715,7 +715,7 @@ export default function Zaidi() {
                   {user?.email}
                 </p>
                 <span className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded uppercase tracking-wider">
-                  {user?.role || 'Admin'}
+                  {user?.role === 'boss' ? 'Boss' : 'Employee'}
                 </span>
               </div>
             </div>
@@ -960,13 +960,13 @@ export default function Zaidi() {
                         onClick={tap(() => {
                           setEditingStaffId(s.id);
                           setStaffName(s.name);
-                          setStaffRole(s.role as any);
+                          setStaffRole('employee');
                           setShowStaffModal(true);
                         })}
                         onPointerUp={tap(() => {
                           setEditingStaffId(s.id);
                           setStaffName(s.name);
-                          setStaffRole(s.role as any);
+                          setStaffRole('employee');
                           setShowStaffModal(true);
                         })}
                         className="p-2 text-blue-500 rounded-lg"

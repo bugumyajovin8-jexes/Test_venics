@@ -378,7 +378,7 @@ export class SyncService {
   }
 
   private static getPushTargets(scope: SyncScope, role?: string): string[] {
-    const isBoss = role === 'boss' || role === 'admin';
+    const isBoss = role === 'boss';
 
     if (scope === 'critical') return [...CRITICAL_TABLES];
     if (scope === 'background') return [...BACKGROUND_TABLES, 'features'];
@@ -391,7 +391,7 @@ export class SyncService {
   }
 
   private static getPullTargets(scope: SyncScope, role?: string): string[] {
-    const isBoss = role === 'boss' || role === 'admin';
+    const isBoss = role === 'boss';
 
     let targets: string[] = [];
     if (scope === 'critical') {
@@ -532,7 +532,7 @@ export class SyncService {
 
   private static async pushTable(tableName: string, table: DexieTable) {
     const userRole = useStore.getState().user?.role;
-    const isBoss = userRole === 'boss' || userRole === 'admin';
+    const isBoss = userRole === 'boss';
 
     if (!isBoss && ['shops', 'users', 'features'].includes(tableName)) return;
 
@@ -646,7 +646,7 @@ export class SyncService {
 
     if (tableName === 'audit_logs') {
       const role = useStore.getState().user?.role;
-      if (role !== 'boss' && role !== 'admin') return;
+      if (role !== 'boss') return;
     }
 
     // Throttle pull operations for each table unless explicitly forced to save user egress bandwidth
@@ -945,8 +945,7 @@ export class SyncService {
     const user = useStore.getState().user;
     if (!user?.shopId) return;
 
-    const isBoss = user.role === 'boss' || user.role === 'admin';
-    if (isBoss) return;
+    if (user.role === 'boss') return;
 
     const currentHour = new Date().getHours();
     const isOffHours = currentHour >= 0 && currentHour < 6;
