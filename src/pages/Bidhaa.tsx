@@ -64,7 +64,7 @@ const ProductRow = ({
           <div className="text-sm text-gray-500 mt-1">
             Bei: {formatCurrency(product.sell_price, currency)}
           </div>
-          <div className="flex items-center mt-2 flex-wrap gap-1.5">
+          <div className="flex items-center mt-2 flex-wrap gap-3">
             {isTracked ? (
               <>
                 <span className={`text-xs font-medium px-2 py-1 rounded-md ${isLow ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
@@ -89,7 +89,7 @@ const ProductRow = ({
                   <button
                     onClick={tap(() => { setBatchModalProduct(product); })}
                     onPointerUp={tap(() => { setBatchModalProduct(product); })}
-                    className="bg-orange-100 text-orange-700 p-2.5 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none"
+                    className="bg-orange-100 text-orange-700 p-2.5 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none ml-auto"
                     style={{
                       WebkitTapHighlightColor: 'transparent',
                       WebkitTouchCallout: 'none',
