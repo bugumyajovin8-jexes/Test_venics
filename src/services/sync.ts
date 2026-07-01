@@ -63,11 +63,11 @@ export class SyncService {
 
   // Fine-tuned pull throttle intervals per table to conserve user budget & bandwidth
   private static readonly PULL_THROTTLE_MS: Record<string, number> = {
-    sales: 45_000,          // 45 seconds default
-    sale_items: 45_000,
-    products: 45_000,
-    debt_payments: 45_000,
-    assistant_chats: 30_000, // Chats can be slightly faster for interactive feel
+    sales: 90_000,
+    sale_items: 90_000,
+    products: 90_000,
+    debt_payments: 90_000,
+    assistant_chats: 60_000,
     shops: 300_000,         // Shops static config rarely changes (5 min)
     users: 300_000,         // User profiles rarely change (5 min)
     expenses: 120_000,      // Expenses are non-interactive back-off records (2 min)
