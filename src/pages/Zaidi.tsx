@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { useStore } from '../store';
 import { formatCurrency } from '../utils/format';
+import { useTap } from '../utils/useTap';
 import { Database, LogOut, RefreshCw, BarChart3, ChevronRight, Phone, Wallet, User, ShieldCheck, Trash2, Clock, AlertTriangle, X, CheckCircle, MessageSquare, Zap, Bell, Users, Plus, Shield, Settings, Ban, FileText, Store } from 'lucide-react';
 import { supabase } from '../supabase';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,6 +15,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { startOfDay, startOfWeek, startOfMonth, startOfYear, subDays, isBefore, isAfter, addDays, format } from 'date-fns';
 
 export default function Zaidi() {
+  const tap = useTap();
   const { user, logout, showAlert, showConfirm, isBoss, isFeatureEnabled, syncHealth } = useStore();
   const location = useLocation();
   const settings = useLiveQuery(() => db.settings.get(1));
@@ -683,9 +685,10 @@ export default function Zaidi() {
     <div className="p-4 pb-20">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Zaidi</h1>
-        <button 
-          onClick={(e) => { e.preventDefault(); handleLogout(); }}
-          className="text-red-600 flex items-center font-medium bg-red-50 px-4 py-2 rounded-xl cursor-pointer touch-manipulation select-none transition-all" 
+        <button
+          onClick={tap(() => { handleLogout(); })}
+          onPointerUp={tap(() => { handleLogout(); })}
+          className="text-red-600 flex items-center font-medium bg-red-50 px-4 py-2 rounded-xl cursor-pointer touch-manipulation select-none transition-all"
           style={{ 
             WebkitTapHighlightColor: 'transparent',
             WebkitTouchCallout: 'none',
@@ -716,12 +719,15 @@ export default function Zaidi() {
                 </span>
               </div>
             </div>
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
+            <button
+              onClick={tap(() => {
                 setNewName(user?.name || '');
                 setShowProfileModal(true);
-              }}
+              })}
+              onPointerUp={tap(() => {
+                setNewName(user?.name || '');
+                setShowProfileModal(true);
+              })}
               className="p-2 text-blue-600 rounded-xl transition-colors"
             >
               <Settings className="w-5 h-5" />
@@ -734,7 +740,8 @@ export default function Zaidi() {
           <div className="flex items-center justify-between">
             <div
               role="button"
-              onClick={(e) => { if (shop?.enable_expiry) { e.preventDefault(); setShowExpiryList(true); } }}
+              onClick={tap(() => { if (shop?.enable_expiry) { setShowExpiryList(true); } })}
+              onPointerUp={tap(() => { if (shop?.enable_expiry) { setShowExpiryList(true); } })}
               className={`flex items-center flex-1 ${shop?.enable_expiry ? 'cursor-pointer' : ''}`}
               style={{ touchAction: 'manipulation' }}
             >
@@ -746,8 +753,9 @@ export default function Zaidi() {
                 <p className="text-xs text-gray-500">Washa/Zima kipengele cha tarehe za kuisha</p>
               </div>
             </div>
-            <button 
-              onClick={(e) => { e.preventDefault(); toggleExpiry(); }}
+            <button
+              onClick={tap(() => { toggleExpiry(); })}
+              onPointerUp={tap(() => { toggleExpiry(); })}
               className={`w-12 h-6 rounded-full transition-colors relative ${shop?.enable_expiry ? 'bg-purple-600' : 'bg-gray-200'}`}
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
@@ -755,8 +763,9 @@ export default function Zaidi() {
             </button>
           </div>
           {shop?.enable_expiry && (
-            <button 
-              onClick={(e) => { e.preventDefault(); setShowExpiryList(true); }}
+            <button
+              onClick={tap(() => { setShowExpiryList(true); })}
+              onPointerUp={tap(() => { setShowExpiryList(true); })}
               className="w-full mt-4 py-2 text-sm font-bold text-purple-600 bg-purple-50 rounded-xl border border-purple-100"
             >
               Tazama Bidhaa Zilizokwisha Muda
@@ -777,15 +786,21 @@ export default function Zaidi() {
                   <p className="text-xs text-gray-500">Thamani ya bidhaa zote zilizopo</p>
                 </div>
               </div>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
+              <button
+                onClick={tap(() => {
                   const nextVal = !showInventoryValue;
                   setShowInventoryValue(nextVal);
                   if (nextVal) {
                     TelemetryService.trackStockValuationChecked();
                   }
-                }}
+                })}
+                onPointerUp={tap(() => {
+                  const nextVal = !showInventoryValue;
+                  setShowInventoryValue(nextVal);
+                  if (nextVal) {
+                    TelemetryService.trackStockValuationChecked();
+                  }
+                })}
                 className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-colors ${showInventoryValue ? 'bg-gray-100 text-gray-600' : 'bg-green-600 text-white'}`}
               >
                 {showInventoryValue ? 'Ficha' : 'Tazama'}
@@ -829,8 +844,9 @@ export default function Zaidi() {
                   <p className="text-xs text-gray-500">Dhibiti wafanyakazi wa duka lako</p>
                 </div>
               </div>
-              <button 
-                onClick={(e) => { e.preventDefault(); setShowInviteModal(true); }}
+              <button
+                onClick={tap(() => { setShowInviteModal(true); })}
+                onPointerUp={tap(() => { setShowInviteModal(true); })}
                 className="p-2 bg-green-600 text-white rounded-xl shadow-md transition-colors flex items-center space-x-1"
               >
                 <Plus className="w-4 h-4" />
@@ -854,13 +870,17 @@ export default function Zaidi() {
                 <h3 className="text-sm font-bold text-blue-900">Ruhusu Wafanyakazi Kuongeza Bidhaa</h3>
                 <p className="text-[10px] text-blue-700">Wafanyakazi wataweza kuongeza, kuhariri na kuingiza bidhaa kwa Excel.</p>
               </div>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
+              <button
+                onClick={tap(() => {
                   const nextVal = !isFeatureEnabled('staff_product_management');
                   SyncService.toggleFeature('staff_product_management', nextVal);
                   TelemetryService.trackFeatureFlagToggle('staff_product_management', nextVal);
-                }}
+                })}
+                onPointerUp={tap(() => {
+                  const nextVal = !isFeatureEnabled('staff_product_management');
+                  SyncService.toggleFeature('staff_product_management', nextVal);
+                  TelemetryService.trackFeatureFlagToggle('staff_product_management', nextVal);
+                })}
                 className={`w-12 h-6 rounded-full transition-colors relative ${isFeatureEnabled('staff_product_management') ? 'bg-blue-600' : 'bg-gray-300'}`}
               >
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isFeatureEnabled('staff_product_management') ? 'left-7' : 'left-1'}`} />
@@ -873,13 +893,17 @@ export default function Zaidi() {
                 <h3 className="text-sm font-bold text-orange-900">Ruhusu Wafanyakazi Kuona/Kuongeza Matumizi</h3>
                 <p className="text-[10px] text-orange-700">Wafanyakazi wataweza kuona na kuongeza matumizi ya duka.</p>
               </div>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
+              <button
+                onClick={tap(() => {
                   const nextVal = !isFeatureEnabled('staff_expense_management');
                   SyncService.toggleFeature('staff_expense_management', nextVal);
                   TelemetryService.trackFeatureFlagToggle('staff_expense_management', nextVal);
-                }}
+                })}
+                onPointerUp={tap(() => {
+                  const nextVal = !isFeatureEnabled('staff_expense_management');
+                  SyncService.toggleFeature('staff_expense_management', nextVal);
+                  TelemetryService.trackFeatureFlagToggle('staff_expense_management', nextVal);
+                })}
                 className={`w-12 h-6 rounded-full transition-colors relative ${isFeatureEnabled('staff_expense_management') ? 'bg-orange-600' : 'bg-gray-300'}`}
               >
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isFeatureEnabled('staff_expense_management') ? 'left-7' : 'left-1'}`} />
@@ -892,13 +916,17 @@ export default function Zaidi() {
                 <h3 className="text-sm font-bold text-purple-900">Ruhusu Wafanyakazi Kuona Mapato</h3>
                 <p className="text-[10px] text-purple-700">Wafanyakazi wataweza kuona mapato na mauzo yote kwenye Dashibodi na Historia.</p>
               </div>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
+              <button
+                onClick={tap(() => {
                   const nextVal = !isFeatureEnabled('show_mapato_to_staff');
                   SyncService.toggleFeature('show_mapato_to_staff', nextVal);
                   TelemetryService.trackFeatureFlagToggle('show_mapato_to_staff', nextVal);
-                }}
+                })}
+                onPointerUp={tap(() => {
+                  const nextVal = !isFeatureEnabled('show_mapato_to_staff');
+                  SyncService.toggleFeature('show_mapato_to_staff', nextVal);
+                  TelemetryService.trackFeatureFlagToggle('show_mapato_to_staff', nextVal);
+                })}
                 className={`w-12 h-6 rounded-full transition-colors relative ${isFeatureEnabled('show_mapato_to_staff') ? 'bg-purple-600' : 'bg-gray-300'}`}
               >
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isFeatureEnabled('show_mapato_to_staff') ? 'left-7' : 'left-1'}`} />
@@ -928,20 +956,26 @@ export default function Zaidi() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={(e) => {
-                          e.preventDefault();
+                      <button
+                        onClick={tap(() => {
                           setEditingStaffId(s.id);
                           setStaffName(s.name);
                           setStaffRole(s.role as any);
                           setShowStaffModal(true);
-                        }}
+                        })}
+                        onPointerUp={tap(() => {
+                          setEditingStaffId(s.id);
+                          setStaffName(s.name);
+                          setStaffRole(s.role as any);
+                          setShowStaffModal(true);
+                        })}
                         className="p-2 text-blue-500 rounded-lg"
                       >
                         <Settings className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={(e) => { e.preventDefault(); handleToggleBlockStaff(s.id, s.name, s.status); }}
+                      <button
+                        onClick={tap(() => { handleToggleBlockStaff(s.id, s.name, s.status); })}
+                        onPointerUp={tap(() => { handleToggleBlockStaff(s.id, s.name, s.status); })}
                         className={`p-2 rounded-lg ${isBlocked ? 'text-green-600 ' : 'text-red-500 '}`}
                         title={isBlocked ? 'Fungulia Mfanyakazi' : 'Zuia Mfanyakazi'}
                       >
@@ -970,8 +1004,9 @@ export default function Zaidi() {
                   <p className="text-xs text-gray-500">Menejimenti na kubadili duka lako</p>
                 </div>
               </div>
-              <button 
-                onClick={(e) => { e.preventDefault(); setShowAddShopModal(true); }}
+              <button
+                onClick={tap(() => { setShowAddShopModal(true); })}
+                onPointerUp={tap(() => { setShowAddShopModal(true); })}
                 className="p-2 bg-blue-600 text-white rounded-xl shadow-md transition-colors flex items-center space-x-1 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
@@ -1010,9 +1045,10 @@ export default function Zaidi() {
                         {isActive ? (
                           <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded-lg">Active</span>
                         ) : (
-                          <button 
+                          <button
                             disabled={!!switchingShopId}
-                            onClick={(e) => { e.preventDefault(); handleSwitchShop(s.id, s.name); }}
+                            onClick={tap(() => { handleSwitchShop(s.id, s.name); })}
+                            onPointerUp={tap(() => { handleSwitchShop(s.id, s.name); })}
                             className="text-xs font-bold text-blue-600 bg-white border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
                           >
                             {isSwitching ? 'Inahamisha...' : 'Hamia Hapa'}
@@ -1033,16 +1069,23 @@ export default function Zaidi() {
         {isBoss() && (
           <section className="space-y-3">
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-              <button 
-                onClick={async (e) => {
-                  e.preventDefault();
+              <button
+                onClick={tap(async () => {
                   const granted = await notifications.requestPermission();
                   if (granted) {
                     notifications.sendNotification('Hongera!', 'Notifications sasa zimeunganishwa kikamilifu.');
                   } else {
                     showAlert('Kosa', 'Tafadhali ruhusu notifications kwenye browser yako.');
                   }
-                }}
+                })}
+                onPointerUp={tap(async () => {
+                  const granted = await notifications.requestPermission();
+                  if (granted) {
+                    notifications.sendNotification('Hongera!', 'Notifications sasa zimeunganishwa kikamilifu.');
+                  } else {
+                    showAlert('Kosa', 'Tafadhali ruhusu notifications kwenye browser yako.');
+                  }
+                })}
                 className="w-full flex items-center justify-between"
               >
                 <div className="flex items-center">
@@ -1065,7 +1108,8 @@ export default function Zaidi() {
           <div className="flex items-center justify-between">
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); toggleAutoInvoice(); }}
+              onClick={tap(() => { toggleAutoInvoice(); })}
+              onPointerUp={tap(() => { toggleAutoInvoice(); })}
               className="flex items-center flex-1 cursor-pointer"
               style={{ touchAction: 'manipulation' }}
             >
@@ -1077,8 +1121,9 @@ export default function Zaidi() {
                 <p className="text-xs text-gray-500">Ipakue ukikamilisha mauzo</p>
               </div>
             </div>
-            <button 
-              onClick={(e) => { e.preventDefault(); toggleAutoInvoice(); }}
+            <button
+              onClick={tap(() => { toggleAutoInvoice(); })}
+              onPointerUp={tap(() => { toggleAutoInvoice(); })}
               className={`w-12 h-6 rounded-full transition-colors relative ${settings?.autoInvoice ? 'bg-blue-600' : 'bg-gray-200'}`}
               style={{ WebkitTapHighlightColor: 'transparent' }}
             >
@@ -1094,7 +1139,8 @@ export default function Zaidi() {
             <div className="flex items-center justify-between">
               <div
                 role="button"
-                onClick={(e) => { e.preventDefault(); toggleOperate24Hours(); }}
+                onClick={tap(() => { toggleOperate24Hours(); })}
+                onPointerUp={tap(() => { toggleOperate24Hours(); })}
                 className="flex items-center flex-1 cursor-pointer"
                 style={{ touchAction: 'manipulation' }}
               >
@@ -1106,8 +1152,9 @@ export default function Zaidi() {
                   <p className="text-xs text-gray-500">Zima ulinzi wa tahadhari nyakati za usiku sana</p>
                 </div>
               </div>
-              <button 
-                onClick={(e) => { e.preventDefault(); toggleOperate24Hours(); }}
+              <button
+                onClick={tap(() => { toggleOperate24Hours(); })}
+                onPointerUp={tap(() => { toggleOperate24Hours(); })}
                 className={`w-12 h-6 rounded-full transition-colors relative ${settings?.operate24Hours ? 'bg-indigo-600' : 'bg-gray-200'}`}
                 style={{ WebkitTapHighlightColor: 'transparent' }}
               >
@@ -1126,8 +1173,9 @@ export default function Zaidi() {
             <p className="text-sm text-gray-600 mb-4">
               Futa historia ya mauzo na matumizi kwa kipindi fulani.
             </p>
-            <button 
-              onClick={(e) => { e.preventDefault(); setShowDeleteModal(true); }}
+            <button
+              onClick={tap(() => { setShowDeleteModal(true); })}
+              onPointerUp={tap(() => { setShowDeleteModal(true); })}
               className="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-100"
             >
               Futa Historia
@@ -1191,9 +1239,8 @@ export default function Zaidi() {
               <p className="text-xs text-amber-800 mb-4 font-medium leading-relaxed">
                 Ikiwa huwezi kuona baadhi ya vipengele ambavyo bosi wako amekuruhusu, bofya kitufe hapa chini kusasisha ruhusa zako upesi kutoka kwenye seva.
               </p>
-              <button 
-                onClick={async (e) => {
-                  e.preventDefault();
+              <button
+                onClick={tap(async () => {
                   if (isSyncing) return;
                   if (!navigator.onLine) {
                     showAlert('Kosa', 'Tafadhali unganisha mtandao kwanza!');
@@ -1209,7 +1256,24 @@ export default function Zaidi() {
                   } finally {
                     setIsSyncing(false);
                   }
-                }}
+                })}
+                onPointerUp={tap(async () => {
+                  if (isSyncing) return;
+                  if (!navigator.onLine) {
+                    showAlert('Kosa', 'Tafadhali unganisha mtandao kwanza!');
+                    return;
+                  }
+                  setIsSyncing(true);
+                  try {
+                    await SyncService.sync(true, 'full');
+                    showAlert('Imefanikiwa', 'Ruhusa zako zimesasishwa kikamilifu!');
+                  } catch (e) {
+                    console.error('Feature sync error:', e);
+                    showAlert('Kosa', 'Imeshindwa kusasisha ruhusa. Jaribu tena baadae au unganisha mtandao vizuri.');
+                  } finally {
+                    setIsSyncing(false);
+                  }
+                })}
                 disabled={isSyncing}
                 className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center space-x-2 shadow-sm transition-all active:scale-[0.98] ${isSyncing ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-amber-600 text-white'}`}
               >
@@ -1272,21 +1336,23 @@ export default function Zaidi() {
                 <Clock className="w-6 h-6 mr-2" />
                 <h2 className="text-xl font-bold">Usimamizi wa Expiry</h2>
               </div>
-              <button onClick={() => setShowExpiryList(false)} className="p-2 bg-gray-100 rounded-full">
+              <button onClick={tap(() => setShowExpiryList(false))} onPointerUp={tap(() => setShowExpiryList(false))} className="p-2 bg-gray-100 rounded-full">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
 
             {/* Tabs */}
             <div className="flex p-1 bg-gray-100 rounded-2xl mb-6">
-              <button 
-                onClick={() => setActiveExpiryTab('expired')}
+              <button
+                onClick={tap(() => setActiveExpiryTab('expired'))}
+                onPointerUp={tap(() => setActiveExpiryTab('expired'))}
                 className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${activeExpiryTab === 'expired' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500'}`}
               >
                 Zilizokwisha ({expiryData.expired.length})
               </button>
-              <button 
-                onClick={() => setActiveExpiryTab('near')}
+              <button
+                onClick={tap(() => setActiveExpiryTab('near'))}
+                onPointerUp={tap(() => setActiveExpiryTab('near'))}
                 className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${activeExpiryTab === 'near' ? 'bg-white text-orange-600 shadow-sm' : 'text-gray-500'}`}
               >
                 Zinazoisha ({expiryData.nearExpiry.length})
@@ -1306,15 +1372,23 @@ export default function Zaidi() {
                     <div>
                       {expiryData.expired.length > 0 ? (
                         <div className="space-y-3">
-                          <button 
-                            onClick={() => {
+                          <button
+                            onClick={tap(() => {
                               showConfirm('Ondoa Zote', `Je, una uhakika unataka kuondoa bidhaa ZOTE ${expiryData.expired.length} zilizokwisha muda?`, async () => {
                                 for (const item of expiryData.expired) {
                                   await handleRemoveBatch(item.id, item.batch.id, true);
                                 }
                                 showAlert('Imefanikiwa', 'Bidhaa zote zilizokwisha muda zimeondolewa.');
                               });
-                            }}
+                            })}
+                            onPointerUp={tap(() => {
+                              showConfirm('Ondoa Zote', `Je, una uhakika unataka kuondoa bidhaa ZOTE ${expiryData.expired.length} zilizokwisha muda?`, async () => {
+                                for (const item of expiryData.expired) {
+                                  await handleRemoveBatch(item.id, item.batch.id, true);
+                                }
+                                showAlert('Imefanikiwa', 'Bidhaa zote zilizokwisha muda zimeondolewa.');
+                              });
+                            })}
                             className="w-full py-3 bg-red-600 text-white rounded-2xl text-sm font-bold flex items-center justify-center mb-4 shadow-md"
                           >
                             <Trash2 className="w-4 h-4 mr-2" /> Ondoa Zote Zilizokwisha
@@ -1334,8 +1408,9 @@ export default function Zaidi() {
                                   <p className="text-xl font-bold text-gray-900">{item.batch.stock}</p>
                                 </div>
                               </div>
-                              <button 
-                                onClick={() => handleRemoveBatch(item.id, item.batch.id)}
+                              <button
+                                onClick={tap(() => handleRemoveBatch(item.id, item.batch.id))}
+                                onPointerUp={tap(() => handleRemoveBatch(item.id, item.batch.id))}
                                 className="w-full py-2.5 bg-white text-red-600 border border-red-200 rounded-xl text-sm font-bold flex items-center justify-center transition-colors"
                               >
                                 <Trash2 className="w-4 h-4 mr-2" /> Ondoa Bidhaa Hii
@@ -1389,8 +1464,9 @@ export default function Zaidi() {
               )}
             </div>
             
-            <button 
-              onClick={() => setShowExpiryList(false)}
+            <button
+              onClick={tap(() => setShowExpiryList(false))}
+              onPointerUp={tap(() => setShowExpiryList(false))}
               className="w-full mt-6 py-4 bg-purple-600 text-white font-bold rounded-2xl shadow-lg"
             >
               Funga
@@ -1408,7 +1484,7 @@ export default function Zaidi() {
                 <Trash2 className="w-6 h-6 mr-2" />
                 <h2 className="text-xl font-bold">Futa Historia</h2>
               </div>
-              <button onClick={() => setShowDeleteModal(false)} className="p-2 bg-gray-100 rounded-full">
+              <button onClick={tap(() => setShowDeleteModal(false))} onPointerUp={tap(() => setShowDeleteModal(false))} className="p-2 bg-gray-100 rounded-full">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -1423,9 +1499,10 @@ export default function Zaidi() {
                 { label: 'Mwaka Huu', value: 'year' },
                 { label: 'Zote', value: 'all' }
               ].map((p) => (
-                <button 
+                <button
                   key={p.value}
-                  onClick={() => setSelectedDeletePeriod(p.value as any)}
+                  onClick={tap(() => setSelectedDeletePeriod(p.value as any))}
+                  onPointerUp={tap(() => setSelectedDeletePeriod(p.value as any))}
                   className={`w-full p-4 text-left font-bold rounded-2xl transition-all border-2 ${
                     selectedDeletePeriod === p.value 
                       ? 'bg-red-50 border-red-500 text-red-700 shadow-sm' 
@@ -1441,17 +1518,22 @@ export default function Zaidi() {
             </div>
             
             <div className="flex space-x-3">
-              <button 
-                onClick={() => {
+              <button
+                onClick={tap(() => {
                   setShowDeleteModal(false);
                   setSelectedDeletePeriod(null);
-                }}
+                })}
+                onPointerUp={tap(() => {
+                  setShowDeleteModal(false);
+                  setSelectedDeletePeriod(null);
+                })}
                 className="flex-1 py-4 text-gray-500 font-bold bg-gray-100 rounded-2xl"
               >
                 Ghairi
               </button>
-              <button 
-                onClick={handleDeleteHistory}
+              <button
+                onClick={tap(() => handleDeleteHistory())}
+                onPointerUp={tap(() => handleDeleteHistory())}
                 disabled={!selectedDeletePeriod}
                 className="flex-1 py-4 bg-red-600 disabled:bg-gray-300 text-white font-bold rounded-2xl shadow-lg shadow-red-100 cursor-pointer touch-manipulation select-none transition-all"
                 style={{ 
@@ -1475,7 +1557,7 @@ export default function Zaidi() {
                 <Settings className="w-6 h-6 mr-2" />
                 <h2 className="text-xl font-bold">Hariri Mfanyakazi</h2>
               </div>
-              <button onClick={() => { setShowStaffModal(false); setEditingStaffId(null); }} className="p-2 bg-gray-100 rounded-full">
+              <button onClick={tap(() => { setShowStaffModal(false); setEditingStaffId(null); })} onPointerUp={tap(() => { setShowStaffModal(false); setEditingStaffId(null); })} className="p-2 bg-gray-100 rounded-full">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -1493,17 +1575,19 @@ export default function Zaidi() {
               </div>
 
               <div className="flex space-x-3 pt-4">
-                <button 
-                  onClick={() => { setShowStaffModal(false); setEditingStaffId(null); }}
+                <button
+                  onClick={tap(() => { setShowStaffModal(false); setEditingStaffId(null); })}
+                  onPointerUp={tap(() => { setShowStaffModal(false); setEditingStaffId(null); })}
                   className="flex-1 py-4 text-gray-500 font-bold bg-gray-100 rounded-2xl"
                 >
                   Ghairi
                 </button>
-                <button 
-                  onClick={handleUpdateStaff}
+                <button
+                  onClick={tap(() => handleUpdateStaff())}
+                  onPointerUp={tap(() => handleUpdateStaff())}
                   disabled={isAddingStaff || !staffName.trim()}
                   className="flex-1 py-4 bg-blue-600 disabled:bg-gray-300 text-white font-bold rounded-2xl shadow-lg shadow-blue-100 cursor-pointer touch-manipulation select-none transition-all"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -1525,7 +1609,7 @@ export default function Zaidi() {
                 <Plus className="w-6 h-6 mr-2" />
                 <h2 className="text-xl font-bold">Mwaliko Mpya</h2>
               </div>
-              <button onClick={() => { setShowInviteModal(false); setStaffEmail(''); }} className="p-2 bg-gray-100 rounded-full">
+              <button onClick={tap(() => { setShowInviteModal(false); setStaffEmail(''); })} onPointerUp={tap(() => { setShowInviteModal(false); setStaffEmail(''); })} className="p-2 bg-gray-100 rounded-full">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -1548,17 +1632,19 @@ export default function Zaidi() {
               </div>
 
               <div className="flex space-x-3 pt-4">
-                <button 
-                  onClick={() => { setShowInviteModal(false); setStaffEmail(''); }}
+                <button
+                  onClick={tap(() => { setShowInviteModal(false); setStaffEmail(''); })}
+                  onPointerUp={tap(() => { setShowInviteModal(false); setStaffEmail(''); })}
                   className="flex-1 py-4 text-gray-500 font-bold bg-gray-100 rounded-2xl"
                 >
                   Ghairi
                 </button>
-                <button 
-                  onClick={handleInviteStaff}
+                <button
+                  onClick={tap(() => handleInviteStaff())}
+                  onPointerUp={tap(() => handleInviteStaff())}
                   disabled={isAddingStaff || !staffEmail}
                   className="flex-1 py-4 bg-green-600 disabled:bg-gray-300 text-white font-bold rounded-2xl shadow-lg shadow-green-100 cursor-pointer touch-manipulation select-none transition-all"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -1579,7 +1665,7 @@ export default function Zaidi() {
                 <User className="w-6 h-6 mr-2" />
                 <h2 className="text-xl font-bold">Hariri Wasifu</h2>
               </div>
-              <button onClick={() => setShowProfileModal(false)} className="p-2 bg-gray-100 rounded-full">
+              <button onClick={tap(() => setShowProfileModal(false))} onPointerUp={tap(() => setShowProfileModal(false))} className="p-2 bg-gray-100 rounded-full">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -1598,17 +1684,19 @@ export default function Zaidi() {
               </div>
 
               <div className="flex space-x-3 pt-4">
-                <button 
-                  onClick={() => setShowProfileModal(false)}
+                <button
+                  onClick={tap(() => setShowProfileModal(false))}
+                  onPointerUp={tap(() => setShowProfileModal(false))}
                   className="flex-1 py-4 text-gray-500 font-bold bg-gray-100 rounded-2xl"
                 >
                   Ghairi
                 </button>
-                <button 
-                  onClick={handleUpdateProfile}
+                <button
+                  onClick={tap(() => handleUpdateProfile())}
+                  onPointerUp={tap(() => handleUpdateProfile())}
                   disabled={isAddingStaff || !newName.trim()}
                   className="flex-1 py-4 bg-blue-600 disabled:bg-gray-300 text-white font-bold rounded-2xl shadow-lg shadow-blue-100 cursor-pointer touch-manipulation select-none transition-all"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -1630,7 +1718,7 @@ export default function Zaidi() {
                 <Store className="w-6 h-6 mr-2" />
                 <h2 className="text-xl font-bold">Ongeza Duka</h2>
               </div>
-              <button onClick={() => { setShowAddShopModal(false); setNewShopName(''); }} className="p-2 bg-gray-100 rounded-full cursor-pointer">
+              <button onClick={tap(() => { setShowAddShopModal(false); setNewShopName(''); })} onPointerUp={tap(() => { setShowAddShopModal(false); setNewShopName(''); })} className="p-2 bg-gray-100 rounded-full cursor-pointer">
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -1654,9 +1742,10 @@ export default function Zaidi() {
               </div>
 
               <div className="flex space-x-3 pt-2">
-                <button 
+                <button
                   type="button"
-                  onClick={() => { setShowAddShopModal(false); setNewShopName(''); }}
+                  onClick={tap(() => { setShowAddShopModal(false); setNewShopName(''); })}
+                  onPointerUp={tap(() => { setShowAddShopModal(false); setNewShopName(''); })}
                   className="flex-1 py-4 text-gray-500 font-bold bg-gray-100 rounded-2xl cursor-pointer"
                 >
                   Ghairi

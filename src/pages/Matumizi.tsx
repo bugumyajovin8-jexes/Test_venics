@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTap } from '../utils/useTap';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Expense } from '../db';
 import { useStore } from '../store';
@@ -45,6 +46,7 @@ const formatSwahiliMonthYear = (dateStr: string) => {
 };
 
 export default function Matumizi() {
+  const tap = useTap();
   const { user, showConfirm, showAlert, isBoss, isFeatureEnabled } = useStore();
   const settings = useLiveQuery(() => db.settings.get(1));
   const currency = settings?.currency || 'TZS';
@@ -235,8 +237,9 @@ export default function Matumizi() {
     return (
       <div className="p-4 pt-safe pt-safe-standalone h-full overflow-y-auto">
         <div className="flex items-center mb-6">
-          <button 
-            onClick={(e) => { e.preventDefault(); setIsAdding(false); }}
+          <button
+            onClick={tap(() => setIsAdding(false))}
+            onPointerUp={tap(() => setIsAdding(false))}
             className="text-blue-600 font-medium mr-4"
           >
             Nyuma
@@ -317,10 +320,11 @@ export default function Matumizi() {
     <div className="p-4 flex flex-col h-full pt-safe pt-safe-standalone">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
-          <button 
-            onClick={(e) => { e.preventDefault(); navigate(-1); }}
+          <button
+            onClick={tap(() => navigate(-1))}
+            onPointerUp={tap(() => navigate(-1))}
             className="mr-3 p-2 bg-white rounded-full shadow-sm cursor-pointer touch-manipulation select-none transition-all"
-            style={{ 
+            style={{
               WebkitTapHighlightColor: 'transparent',
               WebkitTouchCallout: 'none',
               touchAction: 'manipulation'
@@ -330,10 +334,11 @@ export default function Matumizi() {
           </button>
           <h1 className="text-2xl font-bold text-gray-800">Matumizi</h1>
         </div>
-        <button 
-          onClick={(e) => { e.preventDefault(); setIsAdding(true); }}
+        <button
+          onClick={tap(() => setIsAdding(true))}
+          onPointerUp={tap(() => setIsAdding(true))}
           className="bg-blue-600 text-white p-3 rounded-2xl shadow-lg shadow-blue-100 cursor-pointer touch-manipulation select-none transition-all"
-          style={{ 
+          style={{
             WebkitTapHighlightColor: 'transparent',
             WebkitTouchCallout: 'none',
             touchAction: 'manipulation'
@@ -384,7 +389,8 @@ export default function Matumizi() {
                 ) : (
                   <div
                     role="button"
-                    onClick={(e) => { e.preventDefault(); toggleMonth(group.monthKey); }}
+                    onClick={tap(() => toggleMonth(group.monthKey))}
+                    onPointerUp={tap(() => toggleMonth(group.monthKey))}
                     className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer transition-all duration-200"
                     style={{ touchAction: 'manipulation' }}
                   >
@@ -433,8 +439,9 @@ export default function Matumizi() {
                         <div className="text-right flex flex-col items-end">
                           <div className="font-bold text-red-600">{formatCurrency(expense.amount, currency)}</div>
                           {(user?.role === 'admin' || user?.role === 'boss') && (
-                            <button 
-                              onClick={(e) => { e.preventDefault(); expense.id && handleDelete(expense.id); }}
+                            <button
+                              onClick={tap(() => expense.id && handleDelete(expense.id))}
+                              onPointerUp={tap(() => expense.id && handleDelete(expense.id))}
                               className="mt-2 text-gray-300 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />

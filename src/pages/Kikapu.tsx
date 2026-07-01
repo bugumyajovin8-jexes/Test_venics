@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useDeferredValue, useCallback } from 'react';
+import { useTap } from '../utils/useTap';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, Sale, SaleItem } from '../db';
 import { useStore } from '../store';
@@ -13,6 +14,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 const PriceInput = ({ item, currency }: { item: any, currency: string }) => {
+  const tap = useTap();
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(item.sell_price.toString());
   const updateCartItemPrice = useStore(state => state.updateCartItemPrice);
@@ -45,10 +47,8 @@ const PriceInput = ({ item, currency }: { item: any, currency: string }) => {
   return (
     <div
       role="button"
-      onClick={() => {
-        setIsEditing(true);
-        setValue(item.sell_price.toString());
-      }}
+      onClick={tap(() => { setIsEditing(true); setValue(item.sell_price.toString()); })}
+      onPointerUp={tap(() => { setIsEditing(true); setValue(item.sell_price.toString()); })}
       className="flex items-center bg-blue-50 text-blue-700 px-3 py-2 rounded-xl cursor-pointer active:scale-95  border border-blue-100"
       style={{ touchAction: 'manipulation' }}
     >
@@ -59,6 +59,7 @@ const PriceInput = ({ item, currency }: { item: any, currency: string }) => {
 };
 
 const QtyControl = ({ product, cartItem, updateQty, removeFromCart, showToast, onQtyClick, activeKeypad }: any) => {
+  const tap = useTap();
   const isAtMaxStock = cartItem ? cartItem.qty >= product.stock : false;
 
   const isKeypadActive = activeKeypad && activeKeypad.itemId === product.id;
@@ -67,39 +68,47 @@ const QtyControl = ({ product, cartItem, updateQty, removeFromCart, showToast, o
 
   return (
     <div className="flex items-center bg-blue-50/50 border border-blue-100 rounded-lg p-0.5 w-full justify-between">
-      <button 
-        onClick={(e) => {
-          e.stopPropagation();
+      <button
+        onClick={tap(() => {
           if (cartItem.qty > 1) {
             updateQty(product.id!, cartItem.qty - 1);
           } else {
             removeFromCart(product.id!);
           }
-        }}
+        })}
+        onPointerUp={tap(() => {
+          if (cartItem.qty > 1) {
+            updateQty(product.id!, cartItem.qty - 1);
+          } else {
+            removeFromCart(product.id!);
+          }
+        })}
         className="p-1.5 text-blue-600 hover:bg-blue-100/80 rounded cursor-pointer select-none transition-colors active:scale-95"
       >
         <Minus className="w-3.5 h-3.5" />
       </button>
       <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (onQtyClick) {
-            onQtyClick();
-          }
-        }}
+        onClick={tap(() => { if (onQtyClick) onQtyClick(); })}
+        onPointerUp={tap(() => { if (onQtyClick) onQtyClick(); })}
         className={`flex-1 text-center py-1 px-1.5 rounded  active:scale-95 text-[11.5px] font-black whitespace-nowrap underline decoration-dashed underline-offset-4 decoration-slate-400 mx-1 ${isQtyActive ? 'text-amber-600 animate-pulse bg-amber-50' : 'text-blue-600 hover:text-blue-700'}`}
       >
         {displayQty}
       </button>
-      <button 
-        onClick={(e) => {
-          e.stopPropagation();
+      <button
+        onClick={tap(() => {
           if (isAtMaxStock) {
             showToast(`Umeshafikia kikomo cha stock za bidhaa hii.`, 'info');
             return;
           }
           updateQty(product.id!, cartItem.qty + 1);
-        }}
+        })}
+        onPointerUp={tap(() => {
+          if (isAtMaxStock) {
+            showToast(`Umeshafikia kikomo cha stock za bidhaa hii.`, 'info');
+            return;
+          }
+          updateQty(product.id!, cartItem.qty + 1);
+        })}
         disabled={isAtMaxStock}
         className={`p-1.5 rounded cursor-pointer select-none transition-colors active:scale-95 ${isAtMaxStock ? 'text-blue-200' : 'text-blue-600 hover:bg-blue-100/80'}`}
       >
@@ -128,6 +137,7 @@ const CartItemRowItem = ({
   onPriceClick?: () => void;
   activeKeypad?: any;
 }) => {
+  const tap = useTap();
   const removeFromCart = useStore(state => state.removeFromCart);
 
   // Determine if this item has the keypad active on it
@@ -144,7 +154,8 @@ const CartItemRowItem = ({
       {/* Delete and Name + Qty Indicator (Lean, plenty of room for name & qty) */}
       <div className="flex items-center min-w-0 flex-1 mr-2">
         <button
-          onClick={() => removeFromCart(item.id!)}
+          onClick={tap(() => removeFromCart(item.id!))}
+          onPointerUp={tap(() => removeFromCart(item.id!))}
           className="text-red-400 hover:text-red-500 hover:bg-red-50/60 p-1 mr-1 rounded active:scale-95 shrink-0 transition-colors cursor-pointer"
           title="Futa"
         >
@@ -152,7 +163,8 @@ const CartItemRowItem = ({
         </button>
         <div className="flex items-center min-w-0 flex-1 gap-1.5">
           <button
-            onClick={onQtyClick}
+            onClick={tap(() => { if (onQtyClick) onQtyClick(); })}
+            onPointerUp={tap(() => { if (onQtyClick) onQtyClick(); })}
             className={`text-[11px] font-black cursor-pointer  active:scale-95 shrink-0 touch-manipulation select-none underline decoration-dashed underline-offset-4 decoration-slate-400 ${isQtyActive ? 'text-amber-600 animate-pulse bg-amber-50 rounded px-0.5' : 'text-blue-600 hover:text-blue-700'}`}
             title="Kubadili idadi"
            style={{ WebkitTapHighlightColor: 'transparent' }}>
@@ -167,7 +179,8 @@ const CartItemRowItem = ({
       {/* Price Area: Click to Edit (Comfortable width, text-right, super clean) */}
       <div className="shrink-0 flex items-center justify-end ml-2">
         <button
-          onClick={onPriceClick}
+          onClick={tap(() => { if (onPriceClick) onPriceClick(); })}
+          onPointerUp={tap(() => { if (onPriceClick) onPriceClick(); })}
           className={`text-right cursor-pointer py-1 px-1.5 rounded  active:scale-95 text-[11.5px] font-black whitespace-nowrap underline decoration-dashed underline-offset-4 decoration-slate-400 ${isPriceActive ? 'text-amber-600 animate-pulse bg-amber-50' : 'text-blue-600 hover:text-blue-700'}`}
           title="Gusa kubadili bei au kuweka punguzo"
          style={{ WebkitTapHighlightColor: 'transparent' }}>
@@ -179,6 +192,7 @@ const CartItemRowItem = ({
 };
 
 export default function Kikapu() {
+  const tap = useTap();
   const user = useStore(state => state.user);
   const settings = useLiveQuery(() => db.settings.get(1));
   const shop = useLiveQuery(() => user?.shopId ? db.shops.get(user.shopId) : Promise.resolve(undefined), [user?.shopId]);
@@ -673,7 +687,7 @@ export default function Kikapu() {
     return (
       <div className="p-4 flex flex-col h-full bg-white">
         <div className="flex items-center mb-6">
-          <button onClick={() => setIsCheckout(false)} className="text-blue-600 font-medium mr-4">Nyuma</button>
+          <button onClick={tap(() => setIsCheckout(false))} onPointerUp={tap(() => setIsCheckout(false))} className="text-blue-600 font-medium mr-4">Nyuma</button>
           <h1 className="text-xl font-bold text-gray-800">Taarifa za Mkopo</h1>
         </div>
 
@@ -704,7 +718,8 @@ export default function Kikapu() {
                 {filteredCustomers.map(c => (
                   <button
                     key={c}
-                    onClick={() => handleSelectCustomer(c)}
+                    onClick={tap(() => handleSelectCustomer(c))}
+                    onPointerUp={tap(() => handleSelectCustomer(c))}
                     className="w-full text-left p-4 border-b border-gray-100 last:border-0 text-sm font-medium"
                   >
                     {c}
@@ -734,8 +749,9 @@ export default function Kikapu() {
           </div>
         </div>
 
-        <button 
-          onClick={() => handleCompleteSale('credit')}
+        <button
+          onClick={tap(() => handleCompleteSale('credit'))}
+          onPointerUp={tap(() => handleCompleteSale('credit'))}
           disabled={!customerName}
           className="w-full bg-orange-600 disabled:bg-gray-400 text-white font-bold py-5 rounded-2xl mt-6 shadow-xl text-lg flex items-center justify-center space-x-2"
         >
@@ -766,7 +782,8 @@ export default function Kikapu() {
 
         <div className="flex overflow-x-auto pb-1 scrollbar-hide space-x-1.5">
           <button
-            onClick={() => setSelectedLetter(null)}
+            onClick={tap(() => setSelectedLetter(null))}
+            onPointerUp={tap(() => setSelectedLetter(null))}
             className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-[10.5px] font-black  cursor-pointer ${!selectedLetter ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
           >
             All
@@ -774,7 +791,8 @@ export default function Kikapu() {
           {alphabet.map(letter => (
             <button
               key={letter}
-              onClick={() => setSelectedLetter(selectedLetter === letter ? null : letter)}
+              onClick={tap(() => setSelectedLetter(selectedLetter === letter ? null : letter))}
+              onPointerUp={tap(() => setSelectedLetter(selectedLetter === letter ? null : letter))}
               className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-[10.5px] font-black  cursor-pointer ${selectedLetter === letter ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
             >
               {letter}
@@ -798,7 +816,8 @@ export default function Kikapu() {
                   </span>
                 </div>
                 <button
-                  onClick={clearCart}
+                  onClick={tap(() => clearCart())}
+                  onPointerUp={tap(() => clearCart())}
                   className="text-[10px] font-black text-red-500 uppercase tracking-wider px-2 py-0.5 active:scale-95 cursor-pointer hover:bg-red-50 rounded cursor-pointer touch-manipulation select-none active:scale-95 "
                  style={{ WebkitTapHighlightColor: 'transparent' }}>
                   Futa Vyote
@@ -865,7 +884,7 @@ export default function Kikapu() {
             {/* Combined checkout buttons directly beneath the list (3 buttons layout - wrapped responsive to magnification) */}
             <div className="flex flex-wrap gap-1.5 shrink-0">
               <button
-                onClick={() => {
+                onClick={tap(() => {
                   if (activeKeypad) {
                     if (activeKeypad.type === 'qty') {
                       const parsed = parseInt(activeKeypad.value || '1', 10);
@@ -881,21 +900,40 @@ export default function Kikapu() {
                     setActiveKeypad(null);
                   }
                   setIsCheckout(true);
-                }}
+                })}
+                onPointerUp={tap(() => {
+                  if (activeKeypad) {
+                    if (activeKeypad.type === 'qty') {
+                      const parsed = parseInt(activeKeypad.value || '1', 10);
+                      const finalQtyName = isNaN(parsed) ? 1 : parsed;
+                      const parsedQty = Math.max(1, finalQtyName);
+                      updateQty(activeKeypad.itemId, parsedQty);
+                    } else if (activeKeypad.type === 'price') {
+                      const parsed = parseFloat(activeKeypad.value || '0');
+                      if (!isNaN(parsed) && parsed >= 0) {
+                        updateCartItemPrice(activeKeypad.itemId, parsed);
+                      }
+                    }
+                    setActiveKeypad(null);
+                  }
+                  setIsCheckout(true);
+                })}
                 className="bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl font-extrabold text-[10px] tracking-tight active:scale-95 shadow-xs flex flex-col items-center justify-center cursor-pointer select-none touch-manipulation flex-1 min-w-[85px]"
                 title="Sajili kama mauzo ya mkopo"
               >
                 <span>MKOPO</span>
               </button>
               <button
-                onClick={() => handleCompleteSale('mobile')}
+                onClick={tap(() => handleCompleteSale('mobile'))}
+                onPointerUp={tap(() => handleCompleteSale('mobile'))}
                 className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-extrabold text-[10px] tracking-tight active:scale-95 shadow-xs flex flex-col items-center justify-center cursor-pointer select-none touch-manipulation flex-1 min-w-[85px]"
                 title="Lipa kwa njia ya Mtandao wa Simu (M-Pesa, TigoPesa, AirtelMoney, n.k.)"
               >
                 <span>UZA (SIMU/BANK)</span>
               </button>
               <button
-                onClick={() => handleCompleteSale('cash')}
+                onClick={tap(() => handleCompleteSale('cash'))}
+                onPointerUp={tap(() => handleCompleteSale('cash'))}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-extrabold text-[10px] tracking-tight active:scale-95 shadow-xs flex flex-col items-center justify-center cursor-pointer select-none touch-manipulation flex-1 min-w-[85px]"
                 title="Kamilisha mauzo ya pesa taslimu (Cash)"
               >
@@ -947,8 +985,9 @@ export default function Kikapu() {
               <div className="text-center text-gray-500 py-12">
                 <ShoppingBag className="w-12 h-12 text-gray-100 mx-auto mb-4" />
                 <p className="font-bold">Mauzo yako tupu</p>
-                <button 
-                  onClick={() => setIsDiscountMode(false)}
+                <button
+                  onClick={tap(() => setIsDiscountMode(false))}
+                  onPointerUp={tap(() => setIsDiscountMode(false))}
                   className="text-blue-600 text-xs mt-2 underline"
                 >
                   Rudi kuongeza bidhaa
@@ -1037,26 +1076,29 @@ export default function Kikapu() {
             {/* Keypad numbers grid in requested 4x4 layout */}
             <div className="grid grid-cols-4 gap-1.5">
               {/* Row 1 */}
-              <button 
-                onClick={() => handleKeypadPress('1')} 
+              <button
+                onClick={tap(() => handleKeypadPress('1'))}
+                onPointerUp={tap(() => handleKeypadPress('1'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 1
               </button>
-              <button 
-                onClick={() => handleKeypadPress('2')} 
+              <button
+                onClick={tap(() => handleKeypadPress('2'))}
+                onPointerUp={tap(() => handleKeypadPress('2'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 2
               </button>
-              <button 
-                onClick={() => handleKeypadPress('3')} 
+              <button
+                onClick={tap(() => handleKeypadPress('3'))}
+                onPointerUp={tap(() => handleKeypadPress('3'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 3
               </button>
-              <button 
-                onClick={() => {
+              <button
+                onClick={tap(() => {
                   if (activeKeypad) {
                     if (activeKeypad.type === 'qty') {
                       const parsed = parseInt(activeKeypad.value || '1', 10);
@@ -1071,92 +1113,123 @@ export default function Kikapu() {
                     }
                   }
                   setActiveKeypad(null);
-                }} 
-                className="h-12 bg-blue-500/20 active:scale-90 text-blue-400 font-black text-[22px] rounded-2xl  border border-blue-500/25 shadow-3xs flex items-center justify-center cursor-pointer select-none" 
+                })}
+                onPointerUp={tap(() => {
+                  if (activeKeypad) {
+                    if (activeKeypad.type === 'qty') {
+                      const parsed = parseInt(activeKeypad.value || '1', 10);
+                      const finalQtyName = isNaN(parsed) ? 1 : parsed;
+                      const parsedQty = Math.max(1, finalQtyName);
+                      updateQty(activeKeypad.itemId, parsedQty);
+                    } else if (activeKeypad.type === 'price') {
+                      const parsed = parseFloat(activeKeypad.value || '0');
+                      if (!isNaN(parsed) && parsed >= 0) {
+                        updateCartItemPrice(activeKeypad.itemId, parsed);
+                      }
+                    }
+                  }
+                  setActiveKeypad(null);
+                })}
+                className="h-12 bg-blue-500/20 active:scale-90 text-blue-400 font-black text-[22px] rounded-2xl  border border-blue-500/25 shadow-3xs flex items-center justify-center cursor-pointer select-none"
                 title="Funga kibodi"
               >
                 ↓
               </button>
 
               {/* Row 2 */}
-              <button 
-                onClick={() => handleKeypadPress('4')} 
+              <button
+                onClick={tap(() => handleKeypadPress('4'))}
+                onPointerUp={tap(() => handleKeypadPress('4'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 4
               </button>
-              <button 
-                onClick={() => handleKeypadPress('5')} 
+              <button
+                onClick={tap(() => handleKeypadPress('5'))}
+                onPointerUp={tap(() => handleKeypadPress('5'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 5
               </button>
-              <button 
-                onClick={() => handleKeypadPress('6')} 
+              <button
+                onClick={tap(() => handleKeypadPress('6'))}
+                onPointerUp={tap(() => handleKeypadPress('6'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 6
               </button>
-              <button 
-                onClick={() => setActiveKeypad(prev => prev ? { ...prev, value: '' } : null)} 
-                className="h-12 bg-red-500/20 active:scale-95 text-red-500 font-black text-[13px] rounded-2xl  border border-red-500/20 shadow-3xs flex items-center justify-center cursor-pointer select-none uppercase font-sans tracking-wide" 
+              <button
+                onClick={tap(() => setActiveKeypad(prev => prev ? { ...prev, value: '' } : null))}
+                onPointerUp={tap(() => setActiveKeypad(prev => prev ? { ...prev, value: '' } : null))}
+                className="h-12 bg-red-500/20 active:scale-95 text-red-500 font-black text-[13px] rounded-2xl  border border-red-500/20 shadow-3xs flex items-center justify-center cursor-pointer select-none uppercase font-sans tracking-wide"
                 title="Futa vyote"
               >
                 Clear
               </button>
 
               {/* Row 3 */}
-              <button 
-                onClick={() => handleKeypadPress('7')} 
+              <button
+                onClick={tap(() => handleKeypadPress('7'))}
+                onPointerUp={tap(() => handleKeypadPress('7'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 7
               </button>
-              <button 
-                onClick={() => handleKeypadPress('8')} 
+              <button
+                onClick={tap(() => handleKeypadPress('8'))}
+                onPointerUp={tap(() => handleKeypadPress('8'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 8
               </button>
-              <button 
-                onClick={() => handleKeypadPress('9')} 
+              <button
+                onClick={tap(() => handleKeypadPress('9'))}
+                onPointerUp={tap(() => handleKeypadPress('9'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 9
               </button>
-              <button 
-                onClick={() => setActiveKeypad(prev => {
+              <button
+                onClick={tap(() => setActiveKeypad(prev => {
                   if (!prev) return null;
                   const newVal = prev.value.slice(0, -1);
                   return { ...prev, value: newVal };
-                })} 
-                className="h-12 bg-orange-500/20 active:scale-95 text-orange-400 font-extrabold text-[18px] rounded-2xl  border border-orange-500/25 shadow-3xs flex items-center justify-center cursor-pointer select-none" 
+                }))}
+                onPointerUp={tap(() => setActiveKeypad(prev => {
+                  if (!prev) return null;
+                  const newVal = prev.value.slice(0, -1);
+                  return { ...prev, value: newVal };
+                }))}
+                className="h-12 bg-orange-500/20 active:scale-95 text-orange-400 font-extrabold text-[18px] rounded-2xl  border border-orange-500/25 shadow-3xs flex items-center justify-center cursor-pointer select-none"
                 title="Futa namba"
               >
                 ❌
               </button>
 
               {/* Row 4 */}
-              <button 
-                onClick={() => handleKeypadPress('0')} 
+              <button
+                onClick={tap(() => handleKeypadPress('0'))}
+                onPointerUp={tap(() => handleKeypadPress('0'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 0
               </button>
-              <button 
-                onClick={() => handleKeypadPress('00')} 
+              <button
+                onClick={tap(() => handleKeypadPress('00'))}
+                onPointerUp={tap(() => handleKeypadPress('00'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 00
               </button>
-              <button 
-                onClick={() => handleKeypadPress('000')} 
+              <button
+                onClick={tap(() => handleKeypadPress('000'))}
+                onPointerUp={tap(() => handleKeypadPress('000'))}
                 className="h-12 bg-slate-800  text-slate-100 font-extrabold text-[24px] rounded-2xl  active:scale-95 border border-slate-700/60 shadow-inner flex items-center justify-center cursor-pointer select-none"
               >
                 000
               </button>
-              <button 
-                onClick={() => {
+              <button
+                onClick={tap(() => {
                   if (activeKeypad) {
                     if (activeKeypad.type === 'qty') {
                       const parsed = parseInt(activeKeypad.value || '1', 10);
@@ -1171,8 +1244,24 @@ export default function Kikapu() {
                     }
                   }
                   setActiveKeypad(null);
-                }} 
-                className="h-12 bg-emerald-500/20 active:scale-95 text-emerald-400 rounded-2xl  border border-emerald-500/30 shadow-[0_4px_12px_rgba(16,185,129,0.2)] flex items-center justify-center cursor-pointer select-none" 
+                })}
+                onPointerUp={tap(() => {
+                  if (activeKeypad) {
+                    if (activeKeypad.type === 'qty') {
+                      const parsed = parseInt(activeKeypad.value || '1', 10);
+                      const finalQtyName = isNaN(parsed) ? 1 : parsed;
+                      const parsedQty = Math.max(1, finalQtyName);
+                      updateQty(activeKeypad.itemId, parsedQty);
+                    } else if (activeKeypad.type === 'price') {
+                      const parsed = parseFloat(activeKeypad.value || '0');
+                      if (!isNaN(parsed) && parsed >= 0) {
+                        updateCartItemPrice(activeKeypad.itemId, parsed);
+                      }
+                    }
+                  }
+                  setActiveKeypad(null);
+                })}
+                className="h-12 bg-emerald-500/20 active:scale-95 text-emerald-400 rounded-2xl  border border-emerald-500/30 shadow-[0_4px_12px_rgba(16,185,129,0.2)] flex items-center justify-center cursor-pointer select-none"
                 title="Hifadhi na Funga"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="20 6 9 17 4 12"></polyline></svg>

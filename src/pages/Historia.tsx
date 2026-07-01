@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
 import { useStore } from '../store';
+import { useTap } from '../utils/useTap';
 import { formatCurrency, formatInputNumber, parseInputNumber } from '../utils/format';
 import { getValidStock, isProductStockTracked } from '../utils/stock';
 import { format, startOfDay, startOfWeek, startOfMonth, subMonths, startOfYear, eachDayOfInterval, subDays } from 'date-fns';
@@ -18,6 +19,7 @@ import { Sale, SaleItem, Expense } from '../db';
 
 // Inline pricing component for backdated cart matching Kikapu.tsx PriceInput
 const BackdatedInlinePrice = ({ item, currency, onUpdatePrice }: { item: any; currency: string; onUpdatePrice: (productId: string, price: number) => void }) => {
+  const tap = useTap();
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(item.sell_price.toString());
 
@@ -49,10 +51,14 @@ const BackdatedInlinePrice = ({ item, currency, onUpdatePrice }: { item: any; cu
   return (
     <div
       role="button"
-      onClick={() => {
+      onClick={tap(() => {
         setIsEditing(true);
         setValue(item.sell_price.toString());
-      }}
+      })}
+      onPointerUp={tap(() => {
+        setIsEditing(true);
+        setValue(item.sell_price.toString());
+      })}
       className="flex items-center bg-blue-50 text-blue-700 px-2 py-1.5 rounded-xl cursor-pointer active:scale-95 transition-all border border-blue-100"
       style={{ touchAction: 'manipulation' }}
     >
@@ -71,6 +77,7 @@ interface BackdatedQtyControlProps {
 }
 
 const BackdatedQtyControl = ({ product, cartItem, updateQty, removeFromCart, showAlert }: BackdatedQtyControlProps) => {
+  const tap = useTap();
   const isAtMaxStock = cartItem ? cartItem.qty >= product.stock : false;
   const [localQty, setLocalQty] = useState<string>(cartItem.qty.toString());
 
@@ -95,16 +102,22 @@ const BackdatedQtyControl = ({ product, cartItem, updateQty, removeFromCart, sho
 
   return (
     <div className="flex items-center bg-blue-50 rounded-lg p-0.5 w-full justify-between">
-      <button 
+      <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
+        onClick={tap(() => {
           if (cartItem.qty > 1) {
             updateQty(product.id!, cartItem.qty - 1);
           } else {
             removeFromCart(product.id!);
           }
-        }}
+        })}
+        onPointerUp={tap(() => {
+          if (cartItem.qty > 1) {
+            updateQty(product.id!, cartItem.qty - 1);
+          } else {
+            removeFromCart(product.id!);
+          }
+        })}
         className="p-1 text-blue-600 rounded cursor-pointer relative after:absolute after:content-[''] after:-inset-3"
       >
         <Minus className="w-3 h-3" />
@@ -136,13 +149,16 @@ const BackdatedQtyControl = ({ product, cartItem, updateQty, removeFromCart, sho
         onBlur={handleBlur}
         className="w-10 text-center text-[11px] font-black text-blue-700 mx-1 bg-transparent border-none focus:ring-0 p-0 m-0 outline-hidden"
       />
-      <button 
+      <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
+        onClick={tap(() => {
           if (isAtMaxStock) return;
           updateQty(product.id!, cartItem.qty + 1);
-        }}
+        })}
+        onPointerUp={tap(() => {
+          if (isAtMaxStock) return;
+          updateQty(product.id!, cartItem.qty + 1);
+        })}
         disabled={isAtMaxStock}
         className={`p-1 rounded cursor-pointer relative after:absolute after:content-[''] after:-inset-3 ${isAtMaxStock ? 'text-gray-300' : 'text-blue-600 '}`}
       >
@@ -153,6 +169,7 @@ const BackdatedQtyControl = ({ product, cartItem, updateQty, removeFromCart, sho
 };
 
 export default function Historia() {
+  const tap = useTap();
   const { user, isBoss, isFeatureEnabled, showAlert, showConfirm, syncStatus, showToast } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
@@ -1075,8 +1092,9 @@ export default function Historia() {
   return (
     <div className="p-4 flex flex-col h-full pt-safe pt-safe-standalone">
       <div className="flex items-center mb-4">
-        <button 
-          onClick={(e) => { e.preventDefault(); navigate(-1); }}
+        <button
+          onClick={tap(() => { navigate(-1); })}
+          onPointerUp={tap(() => { navigate(-1); })}
           className="mr-3 p-2 bg-white rounded-full shadow-sm border border-gray-100 cursor-pointer"
         >
            <ArrowLeft className="w-5 h-5" />
@@ -1087,14 +1105,16 @@ export default function Historia() {
       {/* View Toggle */}
       {(user?.role === 'admin' || user?.role === 'boss') && (
         <div className="flex bg-gray-200 p-1 rounded-xl mb-6">
-          <button 
-            onClick={(e) => { e.preventDefault(); setView('risiti'); }}
+          <button
+            onClick={tap(() => { setView('risiti'); })}
+            onPointerUp={tap(() => { setView('risiti'); })}
             className={`flex-1 py-2 text-sm font-bold rounded-lg flex justify-center items-center transition-colors ${view === 'risiti' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}
           >
             <Receipt className="w-4 h-4 mr-2" /> Risiti
           </button>
-          <button 
-            onClick={(e) => { e.preventDefault(); setView('ripoti'); }}
+          <button
+            onClick={tap(() => { setView('ripoti'); })}
+            onPointerUp={tap(() => { setView('ripoti'); })}
             className={`flex-1 py-2 text-sm font-bold rounded-lg flex justify-center items-center transition-colors ${view === 'ripoti' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}
           >
             <BarChart3 className="w-4 h-4 mr-2" /> Ripoti
@@ -1117,7 +1137,8 @@ export default function Historia() {
             ].map(f => (
               <button
                 key={f.id}
-                onClick={(e) => { e.preventDefault(); setFilter(f.id); }}
+                onClick={tap(() => { setFilter(f.id); })}
+                onPointerUp={tap(() => { setFilter(f.id); })}
                 className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${
                   filter === f.id ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
                 }`}
@@ -1165,7 +1186,7 @@ export default function Historia() {
 
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-semibold text-gray-800">Risiti za Mauzo</h2>
-            <button onClick={exportCSV} className="text-blue-600 flex items-center text-sm font-medium cursor-pointer touch-manipulation select-none active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
+            <button onClick={tap(() => exportCSV())} onPointerUp={tap(() => exportCSV())} className="text-blue-600 flex items-center text-sm font-medium cursor-pointer touch-manipulation select-none active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
               <Download className="w-4 h-4 mr-1" /> Pakua CSV
             </button>
           </div>
@@ -1203,8 +1224,9 @@ export default function Historia() {
                       )}
                       
                       {isAuthenticated && (
-                        <button 
-                          onClick={() => setReversingSaleId(sale.id)}
+                        <button
+                          onClick={tap(() => setReversingSaleId(sale.id))}
+                          onPointerUp={tap(() => setReversingSaleId(sale.id))}
                           className="flex items-center text-[10px] font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg transition-colors"
                         >
                           <RotateCcw className="w-3 h-3 mr-1" /> RUDISHA MAUZO
@@ -1231,15 +1253,17 @@ export default function Historia() {
                   <span className="font-bold text-red-600">Hii itarudisha bidhaa kwenye stock na kufuta rekodi hii ya mauzo.</span>
                 </p>
                 <div className="flex space-x-3">
-                  <button 
-                    onClick={() => setReversingSaleId(null)}
+                  <button
+                    onClick={tap(() => setReversingSaleId(null))}
+                    onPointerUp={tap(() => setReversingSaleId(null))}
                     disabled={isReversing}
                     className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl disabled:opacity-50"
                   >
                     Hapana
                   </button>
-                  <button 
-                    onClick={() => handleReverseSale(reversingSaleId)}
+                  <button
+                    onClick={tap(() => handleReverseSale(reversingSaleId))}
+                    onPointerUp={tap(() => handleReverseSale(reversingSaleId))}
                     disabled={isReversing}
                     className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg shadow-red-200 disabled:opacity-50 flex items-center justify-center"
                   >
@@ -1254,7 +1278,7 @@ export default function Historia() {
         <div className="flex-1 overflow-y-auto space-y-6 pb-4 scrollbar-hide">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-xl font-bold text-gray-800">Ripoti ya Biashara</h2>
-            <button onClick={exportPDFReports} className="text-blue-600 flex items-center text-sm font-medium cursor-pointer touch-manipulation select-none active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
+            <button onClick={tap(() => exportPDFReports())} onPointerUp={tap(() => exportPDFReports())} className="text-blue-600 flex items-center text-sm font-medium cursor-pointer touch-manipulation select-none active:scale-95 transition-all" style={{ WebkitTapHighlightColor: 'transparent' }}>
               <FileText className="w-4 h-4 mr-1" /> Pakua PDF
             </button>
           </div>
@@ -1300,14 +1324,16 @@ export default function Historia() {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-800">Bidhaa 10 Zinazoongoza</h2>
                 <div className="flex bg-gray-100 p-1 rounded-lg">
-                  <button 
-                    onClick={() => setTopProductsMetric('qty')}
+                  <button
+                    onClick={tap(() => setTopProductsMetric('qty'))}
+                    onPointerUp={tap(() => setTopProductsMetric('qty'))}
                     className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${topProductsMetric === 'qty' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
                   >
                     Idadi
                   </button>
-                  <button 
-                    onClick={() => setTopProductsMetric('profit')}
+                  <button
+                    onClick={tap(() => setTopProductsMetric('profit'))}
+                    onPointerUp={tap(() => setTopProductsMetric('profit'))}
                     className={`px-3 py-1 text-[10px] font-bold rounded-md transition-colors ${topProductsMetric === 'profit' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500'}`}
                   >
                     Faida
@@ -1344,13 +1370,15 @@ export default function Historia() {
 
           <div className="flex space-x-2 mb-2">
             <button
-              onClick={() => handleReportTypeChange('mwezi')}
+              onClick={tap(() => handleReportTypeChange('mwezi'))}
+              onPointerUp={tap(() => handleReportTypeChange('mwezi'))}
               className={`flex-1 py-2 rounded-xl text-sm font-medium ${reportType === 'mwezi' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white text-gray-600 border border-gray-200'}`}
             >
               Kila Mwezi
             </button>
             <button
-              onClick={() => handleReportTypeChange('mwaka')}
+              onClick={tap(() => handleReportTypeChange('mwaka'))}
+              onPointerUp={tap(() => handleReportTypeChange('mwaka'))}
               className={`flex-1 py-2 rounded-xl text-sm font-medium ${reportType === 'mwaka' ? 'bg-blue-100 text-blue-700 border border-blue-200' : 'bg-white text-gray-600 border border-gray-200'}`}
             >
               Kila Mwaka
@@ -1385,8 +1413,9 @@ export default function Historia() {
                             <p className="text-xs text-gray-400">{reportType === 'mwezi' ? 'Ripoti ya Mwezi' : 'Ripoti ya Mwaka'}</p>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => handleLoadReport(report.label)}
+                        <button
+                          onClick={tap(() => handleLoadReport(report.label))}
+                          onPointerUp={tap(() => handleLoadReport(report.label))}
                           className="bg-blue-600 active:scale-95 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm shadow-blue-600/10 cursor-pointer"
                         >
                           Tengeneza Ripoti
@@ -1403,8 +1432,9 @@ export default function Historia() {
                             <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                               Mauzo {report.mauzo}
                             </span>
-                            <button 
-                              onClick={() => setLoadedReports(prev => ({ ...prev, [report.label]: false }))}
+                            <button
+                              onClick={tap(() => setLoadedReports(prev => ({ ...prev, [report.label]: false })))}
+                              onPointerUp={tap(() => setLoadedReports(prev => ({ ...prev, [report.label]: false })))}
                               className="text-xs text-red-500 font-bold px-2 py-1 cursor-pointer bg-red-50 rounded-lg transition-all active:scale-95"
                             >
                               Ficha
@@ -1453,9 +1483,10 @@ export default function Historia() {
         <div className="fixed inset-0 bg-gray-50 z-50 flex flex-col text-left overflow-hidden select-none pt-safe pt-safe-standalone">
           {backdatedIsCheckout ? (
             <div className="flex items-center px-4 py-3 bg-white border-b border-gray-150">
-              <button 
-                type="button" 
-                onClick={() => setBackdatedIsCheckout(false)} 
+              <button
+                type="button"
+                onClick={tap(() => setBackdatedIsCheckout(false))}
+                onPointerUp={tap(() => setBackdatedIsCheckout(false))}
                 className="text-blue-600 font-extrabold text-xs mr-4 px-2 py-1.5 bg-blue-50/60 rounded-xl cursor-pointer"
               >
                 ← Nyuma
@@ -1478,11 +1509,16 @@ export default function Historia() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={tap(() => {
                     setShowBackdatedSaleModal(false);
                     setBackdatedIsCartMode(false);
                     setBackdatedIsCheckout(false);
-                  }}
+                  })}
+                  onPointerUp={tap(() => {
+                    setShowBackdatedSaleModal(false);
+                    setBackdatedIsCartMode(false);
+                    setBackdatedIsCheckout(false);
+                  })}
                   className="p-1 px-2.5 text-red-500 font-black rounded-xl text-xs active:scale-95 transition-all flex items-center space-x-1 cursor-pointer"
                 >
                   <X className="w-4.5 h-4.5" />
@@ -1493,9 +1529,10 @@ export default function Historia() {
               {/* Search Bar / Back Button row like Kikapu.tsx */}
               <div className="p-3 flex items-center justify-between">
                 {backdatedIsCartMode ? (
-                  <button 
+                  <button
                     type="button"
-                    onClick={() => setBackdatedIsCartMode(false)}
+                    onClick={tap(() => setBackdatedIsCartMode(false))}
+                    onPointerUp={tap(() => setBackdatedIsCartMode(false))}
                     className="text-blue-600 font-bold text-xs flex items-center bg-blue-50 px-3 py-1.5 rounded-xl cursor-pointer"
                   >
                      ← Nyuma kwenye Bidhaa
@@ -1523,7 +1560,8 @@ export default function Historia() {
                 <div className="flex overflow-x-auto pb-2 px-3 scrollbar-hide space-x-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedBackdatedLetter(null)}
+                    onClick={tap(() => setSelectedBackdatedLetter(null))}
+                    onPointerUp={tap(() => setSelectedBackdatedLetter(null))}
                     className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-xs font-extrabold transition-all cursor-pointer ${!selectedBackdatedLetter ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
                   >
                     All
@@ -1532,7 +1570,8 @@ export default function Historia() {
                     <button
                       type="button"
                       key={letter}
-                      onClick={() => setSelectedBackdatedLetter(selectedBackdatedLetter === letter ? null : letter)}
+                      onClick={tap(() => setSelectedBackdatedLetter(selectedBackdatedLetter === letter ? null : letter))}
+                      onPointerUp={tap(() => setSelectedBackdatedLetter(selectedBackdatedLetter === letter ? null : letter))}
                       className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-xs font-extrabold transition-all cursor-pointer ${selectedBackdatedLetter === letter ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}
                     >
                       {letter}
@@ -1561,7 +1600,8 @@ export default function Historia() {
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setBackdatedPaymentMethod('cash')}
+                      onClick={tap(() => setBackdatedPaymentMethod('cash'))}
+                      onPointerUp={tap(() => setBackdatedPaymentMethod('cash'))}
                       className={`p-3 rounded-xl border text-center flex items-center justify-center text-xs font-extrabold transition-all cursor-pointer ${
                         backdatedPaymentMethod === 'cash' 
                           ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500' 
@@ -1572,7 +1612,8 @@ export default function Historia() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setBackdatedPaymentMethod('credit')}
+                      onClick={tap(() => setBackdatedPaymentMethod('credit'))}
+                      onPointerUp={tap(() => setBackdatedPaymentMethod('credit'))}
                       className={`p-3 rounded-xl border text-center flex items-center justify-center text-xs font-extrabold transition-all cursor-pointer ${
                         backdatedPaymentMethod === 'credit' 
                           ? 'bg-amber-50 border-amber-500 text-amber-800 ring-1 ring-amber-500' 
@@ -1629,9 +1670,10 @@ export default function Historia() {
               </div>
 
               <div className="pt-4 border-t border-gray-100 mt-6 flex-shrink-0">
-                <button 
+                <button
                   type="button"
-                  onClick={() => handleCompleteBackdatedSale()}
+                  onClick={tap(() => handleCompleteBackdatedSale())}
+                  onPointerUp={tap(() => handleCompleteBackdatedSale())}
                   disabled={isSubmittingBackdated || (backdatedPaymentMethod === 'credit' && !backdatedCustomerName)}
                   className="w-full bg-blue-600 active:scale-95 disabled:bg-gray-400 text-white font-black py-4 rounded-xl shadow-lg text-sm flex items-center justify-center space-x-2 cursor-pointer transition-all"
                 >
@@ -1663,9 +1705,10 @@ export default function Historia() {
                             <div className="flex items-center space-x-2 ml-2">
                               <BackdatedInlinePrice item={item} currency={currency} onUpdatePrice={handleUpdateBackdatedPrice} />
                               
-                              <button 
+                              <button
                                 type="button"
-                                onClick={() => handleRemoveFromBackdatedCart(item.id)} 
+                                onClick={tap(() => handleRemoveFromBackdatedCart(item.id))}
+                                onPointerUp={tap(() => handleRemoveFromBackdatedCart(item.id))}
                                 className="text-red-400 p-2 rounded-xl cursor-pointer active:scale-90"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1679,9 +1722,10 @@ export default function Historia() {
                     <div className="text-center text-gray-500 py-12 flex flex-col items-center justify-center h-full">
                       <ShoppingBag className="w-12 h-12 text-gray-200 mb-3" />
                       <p className="font-bold text-xs animate-pulse">Kikapu cha siku za nyuma kiko tupu</p>
-                      <button 
+                      <button
                         type="button"
-                        onClick={() => setBackdatedIsCartMode(false)}
+                        onClick={tap(() => setBackdatedIsCartMode(false))}
+                        onPointerUp={tap(() => setBackdatedIsCartMode(false))}
                         className="text-blue-600 text-[11px] mt-2 underline font-bold"
                       >
                         Rudi kuongeza bidhaa
@@ -1773,10 +1817,14 @@ export default function Historia() {
                       
                       <button 
                         type="button"
-                        onClick={() => {
+                        onClick={tap(() => {
                           setBackdatedSaleCart([]);
                           setBackdatedIsCartMode(false);
-                        }}
+                        })}
+                        onPointerUp={tap(() => {
+                          setBackdatedSaleCart([]);
+                          setBackdatedIsCartMode(false);
+                        })}
                         className="text-gray-400 p-2 transition-colors cursor-pointer"
                         title="Safi Kikapu"
                       >
@@ -1786,26 +1834,32 @@ export default function Historia() {
 
                     {/* Bottom Actions grid */}
                     <div className="grid grid-cols-3 gap-2 px-1 pb-1">
-                      <button 
+                      <button
                         type="button"
-                        onClick={() => setBackdatedIsCartMode(!backdatedIsCartMode)}
+                        onClick={tap(() => setBackdatedIsCartMode(!backdatedIsCartMode))}
+                        onPointerUp={tap(() => setBackdatedIsCartMode(!backdatedIsCartMode))}
                         className={`${backdatedIsCartMode ? 'bg-blue-600 text-white' : 'bg-white/10  text-white'} py-3.5 rounded-2xl font-bold text-xs transition-all active:scale-95 cursor-pointer`}
                       >
                         {backdatedIsCartMode ? 'Bidhaa' : 'Punguzo'}
                       </button>
-                      <button 
+                      <button
                         type="button"
-                        onClick={() => {
+                        onClick={tap(() => {
                           setBackdatedPaymentMethod('credit');
                           setBackdatedIsCheckout(true);
-                        }}
+                        })}
+                        onPointerUp={tap(() => {
+                          setBackdatedPaymentMethod('credit');
+                          setBackdatedIsCheckout(true);
+                        })}
                         className="bg-orange-500/20 text-orange-400 py-3.5 rounded-2xl font-bold text-xs border border-orange-500/30 transition-all active:scale-95 cursor-pointer text-center"
                       >
                         Mkopo
                       </button>
-                      <button 
+                      <button
                         type="button"
-                        onClick={() => handleCompleteBackdatedSale('cash')}
+                        onClick={tap(() => handleCompleteBackdatedSale('cash'))}
+                        onPointerUp={tap(() => handleCompleteBackdatedSale('cash'))}
                         className="bg-green-600 text-white py-3.5 rounded-2xl font-black text-xs shadow-lg shadow-green-900/20 transition-all active:scale-95 flex items-center justify-center cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
@@ -1836,8 +1890,9 @@ export default function Historia() {
                   <p className="text-xs text-gray-500 font-medium">Sajili matumizi yaliyopita kwenye tarehe husika</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowBackdatedExpenseModal(false)}
+              <button
+                onClick={tap(() => setShowBackdatedExpenseModal(false))}
+                onPointerUp={tap(() => setShowBackdatedExpenseModal(false))}
                 className="p-1.5 rounded-lg bg-gray-50 text-gray-400 cursor-pointer transition-colors active:scale-95"
               >
                 <X className="w-5 h-5" />
@@ -1923,7 +1978,8 @@ export default function Historia() {
             <div className="pt-4 border-t border-gray-100 flex gap-3 justify-end flex-shrink-0">
               <button
                 type="button"
-                onClick={() => setShowBackdatedExpenseModal(false)}
+                onClick={tap(() => setShowBackdatedExpenseModal(false))}
+                onPointerUp={tap(() => setShowBackdatedExpenseModal(false))}
                 disabled={isSubmittingBackdated}
                 className="px-5 py-3 bg-gray-50 font-bold rounded-xl text-xs text-gray-600 cursor-pointer text-center transition-colors active:scale-95"
               >
@@ -1931,7 +1987,8 @@ export default function Historia() {
               </button>
               <button
                 type="button"
-                onClick={handleSaveBackdatedExpense}
+                onClick={tap(() => handleSaveBackdatedExpense())}
+                onPointerUp={tap(() => handleSaveBackdatedExpense())}
                 disabled={isSubmittingBackdated || !backdatedExpenseAmount}
                 className="px-6 py-3 bg-orange-600 active:scale-95 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-md shadow-orange-500/10 cursor-pointer transition-all cursor-pointer touch-manipulation select-none active:scale-95 transition-all"
                style={{ WebkitTapHighlightColor: 'transparent' }}>
@@ -1966,13 +2023,20 @@ export default function Historia() {
             {showActionMenu && (
               <div className="flex flex-col gap-3 mb-4 items-end animate-in fade-in slide-in-from-bottom-5">
                 <button
-                  onClick={() => {
+                  onClick={tap(() => {
                     setShowActionMenu(false);
                     setBackdatedExpenseAmount('');
                     setBackdatedExpenseDesc('');
                     setBackdatedExpenseCategory('Mengineyo');
                     setShowBackdatedExpenseModal(true);
-                  }}
+                  })}
+                  onPointerUp={tap(() => {
+                    setShowActionMenu(false);
+                    setBackdatedExpenseAmount('');
+                    setBackdatedExpenseDesc('');
+                    setBackdatedExpenseCategory('Mengineyo');
+                    setShowBackdatedExpenseModal(true);
+                  })}
                   className="flex items-center gap-3 bg-white px-4 py-3 rounded-full shadow-lg border border-orange-100 text-orange-600 font-bold active:scale-95 transition-transform"
                 >
                   <span className="text-sm">Andika Matumizi Nyuma</span>
@@ -1981,14 +2045,22 @@ export default function Historia() {
                   </div>
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={tap(() => {
                     setShowActionMenu(false);
                     setBackdatedSaleCart([]);
                     setBackdatedPaymentMethod('cash');
                     setBackdatedCustomerName('');
                     setBackdatedCustomerPhone('');
                     setShowBackdatedSaleModal(true);
-                  }}
+                  })}
+                  onPointerUp={tap(() => {
+                    setShowActionMenu(false);
+                    setBackdatedSaleCart([]);
+                    setBackdatedPaymentMethod('cash');
+                    setBackdatedCustomerName('');
+                    setBackdatedCustomerPhone('');
+                    setShowBackdatedSaleModal(true);
+                  })}
                   className="flex items-center gap-3 bg-white px-4 py-3 rounded-full shadow-lg border border-blue-100 text-blue-600 font-bold active:scale-95 transition-transform"
                 >
                   <span className="text-sm">Andika Mauzo Nyuma</span>
@@ -1999,7 +2071,8 @@ export default function Historia() {
               </div>
             )}
             <button
-              onClick={() => setShowActionMenu(!showActionMenu)}
+              onClick={tap(() => setShowActionMenu(!showActionMenu))}
+              onPointerUp={tap(() => setShowActionMenu(!showActionMenu))}
               className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all transform active:scale-95 z-50 ${showActionMenu ? 'bg-gray-800 rotate-45' : 'bg-blue-600'} text-white`}
             >
               <Plus className="w-7 h-7" />

@@ -12,6 +12,7 @@ import AIScanModal from '../components/AIScanModal';
 import StockAuditModal from '../components/StockAuditModal';
 import { format, isAfter, isBefore, addDays } from 'date-fns';
 import { List, RowComponentProps } from 'react-window';
+import { useTap } from '../utils/useTap';
 
 interface ProductRowProps {
   filteredProducts: Product[];
@@ -46,6 +47,7 @@ const ProductRow = ({
   setToggleOffWarning,
   showToast
 }: RowComponentProps<ProductRowProps>) => {
+  const tap = useTap();
   const product = filteredProducts[index];
   if (!product) return null;
   
@@ -69,10 +71,11 @@ const ProductRow = ({
                   Zilizopo: {validStock}
                 </span>
                 {canManageProducts && (
-                  <button 
-                    onClick={(e) => { e.preventDefault(); setStockModalProduct(product); }}
+                  <button
+                    onClick={tap(() => { setStockModalProduct(product); })}
+                    onPointerUp={tap(() => { setStockModalProduct(product); })}
                     className="bg-blue-100 text-blue-700 p-1 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none"
-                    style={{ 
+                    style={{
                       WebkitTapHighlightColor: 'transparent',
                       WebkitTouchCallout: 'none',
                       touchAction: 'manipulation'
@@ -83,10 +86,11 @@ const ProductRow = ({
                   </button>
                 )}
                 {canManageProducts && isExpiryEnabled && (
-                  <button 
-                    onClick={(e) => { e.preventDefault(); setBatchModalProduct(product); }}
+                  <button
+                    onClick={tap(() => { setBatchModalProduct(product); })}
+                    onPointerUp={tap(() => { setBatchModalProduct(product); })}
                     className="bg-orange-100 text-orange-700 p-1 rounded-md transition-colors relative cursor-pointer touch-manipulation select-none"
-                    style={{ 
+                    style={{
                       WebkitTapHighlightColor: 'transparent',
                       WebkitTouchCallout: 'none',
                       touchAction: 'manipulation'
@@ -109,8 +113,36 @@ const ProductRow = ({
             {isBoss() && shop?.enable_stock === false && (
               <button
                 onClick={async (e) => {
-                  e.preventDefault();
                   e.stopPropagation();
+                  tap(async () => {
+                    const isCurrentlyTracked = product.track_stock === true;
+                    if (isCurrentlyTracked) {
+                      setToggleOffWarning({
+                        type: 'individual',
+                        productName: product.name,
+                        onConfirm: async () => {
+                          await db.products.update(product.id, {
+                            track_stock: false,
+                            updated_at: new Date().toISOString(),
+                            synced: 0
+                          });
+                          SyncService.sync();
+                          showToast(`Ufuatiliaji wa stoki ya ${product.name} umezimwa.`, 'success');
+                          setToggleOffWarning(null);
+                        }
+                      });
+                    } else {
+                      await db.products.update(product.id, {
+                        track_stock: true,
+                        updated_at: new Date().toISOString(),
+                        synced: 0
+                      });
+                      SyncService.sync();
+                      showToast(`Sasa stoki ya ${product.name} itafuatiliwa.`, 'success');
+                    }
+                  })();
+                }}
+                onPointerUp={tap(async () => {
                   const isCurrentlyTracked = product.track_stock === true;
                   if (isCurrentlyTracked) {
                     setToggleOffWarning({
@@ -136,10 +168,10 @@ const ProductRow = ({
                     SyncService.sync();
                     showToast(`Sasa stoki ya ${product.name} itafuatiliwa.`, 'success');
                   }
-                }}
+                })}
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full border cursor-pointer select-none transition-all touch-manipulation ${product.track_stock === true ? 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100' : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'}`}
                 title="Bofya kubadili ufuatiliaji wa stoki kwa bidhaa hii"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -156,10 +188,11 @@ const ProductRow = ({
         </div>
         {canManageProducts && (
           <div className="flex space-x-2 shrink-0">
-            <button 
-              onClick={(e) => { e.preventDefault(); setEditingProduct(product); }}
+            <button
+              onClick={tap(() => { setEditingProduct(product); })}
+              onPointerUp={tap(() => { setEditingProduct(product); })}
               className="p-2 text-blue-600 bg-blue-50 rounded-lg cursor-pointer touch-manipulation select-none transition-all"
-              style={{ 
+              style={{
                 WebkitTapHighlightColor: 'transparent',
                 WebkitTouchCallout: 'none',
                 touchAction: 'manipulation'
@@ -167,10 +200,11 @@ const ProductRow = ({
             >
               <Edit className="w-5 h-5" />
             </button>
-            <button 
-              onClick={(e) => { e.preventDefault(); product.id && handleDelete(product.id); }}
+            <button
+              onClick={tap(() => { product.id && handleDelete(product.id); })}
+              onPointerUp={tap(() => { product.id && handleDelete(product.id); })}
               className="p-2 text-red-600 bg-red-50 rounded-lg cursor-pointer touch-manipulation select-none transition-all"
-              style={{ 
+              style={{
                 WebkitTapHighlightColor: 'transparent',
                 WebkitTouchCallout: 'none',
                 touchAction: 'manipulation'
@@ -186,6 +220,7 @@ const ProductRow = ({
 };
 
 export default function Bidhaa() {
+  const tap = useTap();
   const { user, showAlert, showConfirm, showToast, isBoss, isFeatureEnabled } = useStore();
   const settings = useLiveQuery(() => db.settings.get(1));
   const shop = useLiveQuery(() => user?.shopId ? db.shops.get(user.shopId) : Promise.resolve(undefined), [user?.shopId]);
@@ -652,9 +687,9 @@ export default function Bidhaa() {
     return (
       <div className="p-4">
         <div className="flex items-center mb-6">
-          <button 
-            onClick={() => { 
-              setIsAdding(false); 
+          <button
+            onClick={tap(() => {
+              setIsAdding(false);
               setEditingProduct(null);
               setFormBuyPrice('');
               setFormSellPrice('');
@@ -662,7 +697,17 @@ export default function Bidhaa() {
               setFormLowStock('5');
               setFormExpiryDate('');
               setFormNotifyDays('30');
-            }}
+            })}
+            onPointerUp={tap(() => {
+              setIsAdding(false);
+              setEditingProduct(null);
+              setFormBuyPrice('');
+              setFormSellPrice('');
+              setFormStock('');
+              setFormLowStock('5');
+              setFormExpiryDate('');
+              setFormNotifyDays('30');
+            })}
             className="text-blue-600 font-medium mr-4"
           >
             Nyuma
@@ -710,7 +755,7 @@ export default function Bidhaa() {
               </div>
               <button
                 type="button"
-                onClick={() => {
+                onClick={tap(() => {
                   if (formTrackStock) {
                     const currentName = (document.getElementsByName('name')[0] as HTMLInputElement)?.value || 'Bidhaa hii';
                     setToggleOffWarning({
@@ -724,7 +769,22 @@ export default function Bidhaa() {
                   } else {
                     setFormTrackStock(true);
                   }
-                }}
+                })}
+                onPointerUp={tap(() => {
+                  if (formTrackStock) {
+                    const currentName = (document.getElementsByName('name')[0] as HTMLInputElement)?.value || 'Bidhaa hii';
+                    setToggleOffWarning({
+                      type: 'form',
+                      productName: currentName,
+                      onConfirm: () => {
+                        setFormTrackStock(false);
+                        setToggleOffWarning(null);
+                      }
+                    });
+                  } else {
+                    setFormTrackStock(true);
+                  }
+                })}
                 className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 outline-none shrink-0 cursor-pointer ${
                   formTrackStock ? 'bg-blue-600' : 'bg-gray-200'
                 }`}
@@ -821,11 +881,12 @@ export default function Bidhaa() {
               </div>
               
               <div className="p-4 bg-gray-50 border-t border-gray-100 flex space-x-3">
-                <button 
+                <button
                   type="button"
-                  onClick={() => setGuardrailWarning(null)}
+                  onClick={tap(() => setGuardrailWarning(null))}
+                  onPointerUp={tap(() => setGuardrailWarning(null))}
                   className="flex-1 py-3 bg-gray-200 text-gray-800 font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -833,13 +894,16 @@ export default function Bidhaa() {
                 >
                   Hapana, Rekebisha
                 </button>
-                <button 
+                <button
                   type="button"
-                  onClick={async () => {
+                  onClick={tap(async () => {
                     await guardrailWarning.onConfirm();
-                  }}
+                  })}
+                  onPointerUp={tap(async () => {
+                    await guardrailWarning.onConfirm();
+                  })}
                   className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -908,11 +972,12 @@ export default function Bidhaa() {
               </div>
               
               <div className="p-4 bg-gray-50 border-t border-gray-100 flex space-x-3">
-                <button 
+                <button
                   type="button"
-                  onClick={() => setToggleOffWarning(null)}
+                  onClick={tap(() => setToggleOffWarning(null))}
+                  onPointerUp={tap(() => setToggleOffWarning(null))}
                   className="flex-1 py-3 bg-gray-200 text-gray-800 font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -920,13 +985,16 @@ export default function Bidhaa() {
                 >
                   Hapana, Ghairi
                 </button>
-                <button 
+                <button
                   type="button"
-                  onClick={async () => {
+                  onClick={tap(async () => {
                     await toggleOffWarning.onConfirm();
-                  }}
+                  })}
+                  onPointerUp={tap(async () => {
+                    await toggleOffWarning.onConfirm();
+                  })}
                   className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -948,11 +1016,12 @@ export default function Bidhaa() {
         <div className="flex items-center justify-between overflow-x-auto no-scrollbar py-0.5">
           <div className="flex items-center space-x-1.5">
             {isBoss() && products.length > 0 && (
-              <button 
-                onClick={(e) => { e.preventDefault(); handleDeleteAll(); }}
+              <button
+                onClick={tap(() => { handleDeleteAll(); })}
+                onPointerUp={tap(() => { handleDeleteAll(); })}
                 className="bg-red-50 text-red-600 p-2 rounded-full border border-red-100 shrink-0 cursor-pointer touch-manipulation select-none transition-all"
                 title="Futa Bidhaa Zote"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -962,11 +1031,12 @@ export default function Bidhaa() {
               </button>
             )}
             {canManageProducts && (
-              <button 
-                onClick={(e) => { e.preventDefault(); setIsQuickAddOpen(!isQuickAddOpen); }}
+              <button
+                onClick={tap(() => { setIsQuickAddOpen(!isQuickAddOpen); })}
+                onPointerUp={tap(() => { setIsQuickAddOpen(!isQuickAddOpen); })}
                 className={`p-2 rounded-full border transition-all shrink-0 cursor-pointer touch-manipulation select-none ${isQuickAddOpen ? 'bg-orange-600 text-white border-orange-700' : 'bg-orange-50 text-orange-600 border-orange-100'}`}
                 title="Quick Add Mode (Chat)"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -985,11 +1055,12 @@ export default function Bidhaa() {
               </button>
             )*/}
             {canManageProducts && (
-              <button 
-                onClick={(e) => { e.preventDefault(); setIsAIScanModalOpen(true); }}
+              <button
+                onClick={tap(() => { setIsAIScanModalOpen(true); })}
+                onPointerUp={tap(() => { setIsAIScanModalOpen(true); })}
                 className="bg-green-50 text-green-600 p-2 rounded-full border border-green-100 shrink-0 cursor-pointer touch-manipulation select-none transition-all"
                 title="Sajili kwa Venics Smart (Picha)"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -999,11 +1070,12 @@ export default function Bidhaa() {
               </button>
             )}
             {canManageProducts && (
-              <button 
-                onClick={(e) => { e.preventDefault(); setIsImportModalOpen(true); }}
+              <button
+                onClick={tap(() => { setIsImportModalOpen(true); })}
+                onPointerUp={tap(() => { setIsImportModalOpen(true); })}
                 className="bg-white text-gray-700 p-2 rounded-full border border-gray-100 shrink-0 cursor-pointer touch-manipulation select-none transition-all"
                 title="Ingiza kutoka Excel"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -1013,11 +1085,12 @@ export default function Bidhaa() {
               </button>
             )}
           </div>
-          <button 
-            onClick={(e) => { e.preventDefault(); setIsAdding(true); }}
+          <button
+            onClick={tap(() => { setIsAdding(true); })}
+            onPointerUp={tap(() => { setIsAdding(true); })}
             className="bg-blue-600 text-white p-2.5 rounded-full shadow-lg transition-all shrink-0 ml-1 cursor-pointer touch-manipulation select-none"
             title="Sajili Bidhaa Mpya"
-            style={{ 
+            style={{
               WebkitTapHighlightColor: 'transparent',
               WebkitTouchCallout: 'none',
               touchAction: 'manipulation'
@@ -1028,10 +1101,11 @@ export default function Bidhaa() {
         </div>
         <div className={`flex items-center px-2 ${lossProducts.length > 0 ? 'justify-between' : 'justify-center'}`}>
           {lossProducts.length > 0 && (
-            <button 
-              onClick={(e) => { e.preventDefault(); setIsLossModalOpen(true); }}
+            <button
+              onClick={tap(() => { setIsLossModalOpen(true); })}
+              onPointerUp={tap(() => { setIsLossModalOpen(true); })}
               className="flex items-center space-x-1 border border-red-200 bg-red-50 text-red-600 px-3 py-1 rounded-full shadow-sm cursor-pointer touch-manipulation select-none transition-all"
-              style={{ 
+              style={{
                 WebkitTapHighlightColor: 'transparent',
                 WebkitTouchCallout: 'none',
                 touchAction: 'manipulation'
@@ -1071,8 +1145,7 @@ export default function Bidhaa() {
               </span>
             </div>
              <button
-              onClick={async (e) => {
-                e.preventDefault();
+              onClick={tap(async () => {
                 if (!shop || !user?.shopId) return;
                 const currentVal = shop.enable_stock !== false;
                 if (currentVal) {
@@ -1118,7 +1191,54 @@ export default function Bidhaa() {
                   SyncService.sync();
                   showToast('Ufuatiliaji wa stoki umewashwa kwa bidhaa zote.', 'success');
                 }
-              }}
+              })}
+              onPointerUp={tap(async () => {
+                if (!shop || !user?.shopId) return;
+                const currentVal = shop.enable_stock !== false;
+                if (currentVal) {
+                  setToggleOffWarning({
+                    type: 'global',
+                    onConfirm: async () => {
+                      await db.shops.update(user.shopId!, {
+                        enable_stock: false,
+                        updated_at: new Date().toISOString(),
+                        synced: 0
+                      });
+
+                      const shopProducts = await db.products.where('[shop_id+isDeleted]').equals([user.shopId!, 0]).toArray();
+                      for (const prod of shopProducts) {
+                        await db.products.update(prod.id, {
+                          track_stock: false,
+                          updated_at: new Date().toISOString(),
+                          synced: 0
+                        });
+                      }
+
+                      SyncService.sync();
+                      showToast('Ufuatiliaji wa stoki globally umezimwa na bidhaa zote zimewekwa kutofuatiliwa.', 'success');
+                      setToggleOffWarning(null);
+                    }
+                  });
+                } else {
+                  await db.shops.update(user.shopId, {
+                    enable_stock: true,
+                    updated_at: new Date().toISOString(),
+                    synced: 0
+                  });
+
+                  const shopProducts = await db.products.where('[shop_id+isDeleted]').equals([user.shopId, 0]).toArray();
+                  for (const prod of shopProducts) {
+                    await db.products.update(prod.id, {
+                      track_stock: true,
+                      updated_at: new Date().toISOString(),
+                      synced: 0
+                    });
+                  }
+
+                  SyncService.sync();
+                  showToast('Ufuatiliaji wa stoki umewashwa kwa bidhaa zote.', 'success');
+                }
+              })}
               className={`w-11 h-6 rounded-full p-0.5 transition-colors duration-200 outline-none shrink-0 cursor-pointer ${
                 shop?.enable_stock !== false ? 'bg-blue-600' : 'bg-gray-200'
               }`}
@@ -1236,11 +1356,12 @@ export default function Bidhaa() {
               )}
               
               <div className="flex space-x-3">
-                <button 
+                <button
                   type="button"
-                  onClick={() => { setStockModalProduct(null); setStockToAdd(''); }}
+                  onClick={tap(() => { setStockModalProduct(null); setStockToAdd(''); })}
+                  onPointerUp={tap(() => { setStockModalProduct(null); setStockToAdd(''); })}
                   className="flex-1 py-3 border border-gray-200 text-gray-600 font-bold rounded-xl transition-all cursor-pointer touch-manipulation select-none"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -1329,10 +1450,11 @@ export default function Bidhaa() {
               )}
             </div>
             
-            <button 
-              onClick={() => setBatchModalProduct(null)}
+            <button
+              onClick={tap(() => setBatchModalProduct(null))}
+              onPointerUp={tap(() => setBatchModalProduct(null))}
               className="w-full py-4 bg-gray-800 text-white font-bold rounded-xl shadow-lg cursor-pointer touch-manipulation select-none transition-all"
-              style={{ 
+              style={{
                 WebkitTapHighlightColor: 'transparent',
                 WebkitTouchCallout: 'none',
                 touchAction: 'manipulation'
@@ -1393,10 +1515,11 @@ export default function Bidhaa() {
             </div>
             
             <div className="p-4 bg-gray-50 border-t border-gray-100">
-              <button 
-                onClick={() => setIsLossModalOpen(false)}
+              <button
+                onClick={tap(() => setIsLossModalOpen(false))}
+                onPointerUp={tap(() => setIsLossModalOpen(false))}
                 className="w-full py-4 bg-gray-800 text-white font-bold rounded-xl shadow-lg cursor-pointer touch-manipulation select-none transition-all"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -1440,10 +1563,11 @@ export default function Bidhaa() {
             </div>
             
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex space-x-3">
-              <button 
-                onClick={() => setGuardrailWarning(null)}
+              <button
+                onClick={tap(() => setGuardrailWarning(null))}
+                onPointerUp={tap(() => setGuardrailWarning(null))}
                 className="flex-1 py-3 bg-gray-200 text-gray-800 font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -1451,12 +1575,15 @@ export default function Bidhaa() {
               >
                 Hapana, Rekebisha
               </button>
-              <button 
-                onClick={async () => {
+              <button
+                onClick={tap(async () => {
                   await guardrailWarning.onConfirm();
-                }}
+                })}
+                onPointerUp={tap(async () => {
+                  await guardrailWarning.onConfirm();
+                })}
                 className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -1525,11 +1652,12 @@ export default function Bidhaa() {
             </div>
             
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex space-x-3">
-              <button 
+              <button
                 type="button"
-                onClick={() => setToggleOffWarning(null)}
+                onClick={tap(() => setToggleOffWarning(null))}
+                onPointerUp={tap(() => setToggleOffWarning(null))}
                 className="flex-1 py-3 bg-gray-200 text-gray-800 font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -1537,13 +1665,16 @@ export default function Bidhaa() {
               >
                 Hapana, Ghairi
               </button>
-              <button 
+              <button
                 type="button"
-                onClick={async () => {
+                onClick={tap(async () => {
                   await toggleOffWarning.onConfirm();
-                }}
+                })}
+                onPointerUp={tap(async () => {
+                  await toggleOffWarning.onConfirm();
+                })}
                 className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl transition-all text-sm cursor-pointer select-none touch-manipulation"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'

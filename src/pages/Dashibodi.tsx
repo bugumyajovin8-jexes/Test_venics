@@ -12,8 +12,10 @@ import { LicenseService } from '../services/license';
 import { v4 as uuidv4 } from 'uuid';
 import { getValidStock, getSales30DaysVelocityMap, getDynamicThreshold } from '../utils/stock';
 import VenicsLogo from '../components/VenicsLogo';
+import { useTap } from '../utils/useTap';
 
 export default function Dashibodi() {
+  const tap = useTap();
   const { user, showAlert, showToast, isBoss, isFeatureEnabled } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -296,7 +298,8 @@ export default function Dashibodi() {
               <>
                 <div
                   role="button"
-                  onClick={(e) => { e.preventDefault(); handleLicenseSync(); }}
+                  onClick={tap(() => { handleLicenseSync(); })}
+                  onPointerUp={tap(() => { handleLicenseSync(); })}
                   className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium w-fit cursor-pointer  transition-opacity active:scale-[0.98] select-none ${daysRemaining > 5 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}
                   style={{ touchAction: 'manipulation' }}
                 >
@@ -335,7 +338,8 @@ export default function Dashibodi() {
           {isExpiryEnabled && (expiredBatchesCount > 0 || expiringSoonBatchesCount > 0) && (
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); navigate('/zaidi', { state: { openExpiryList: true } }); }}
+              onClick={tap(() => { navigate('/zaidi', { state: { openExpiryList: true } }); })}
+              onPointerUp={tap(() => { navigate('/zaidi', { state: { openExpiryList: true } }); })}
               className="relative cursor-pointer"
               style={{ touchAction: 'manipulation' }}
             >
@@ -350,7 +354,8 @@ export default function Dashibodi() {
           {lowStockProducts.length > 0 && (
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); setShowLowStockModal(true); }}
+              onClick={tap(() => { setShowLowStockModal(true); })}
+              onPointerUp={tap(() => { setShowLowStockModal(true); })}
               className="relative cursor-pointer"
               style={{ touchAction: 'manipulation' }}
             >
@@ -406,21 +411,27 @@ export default function Dashibodi() {
 
       {/* Quick Access Buttons */}
       <div className="grid grid-cols-2 gap-4">
-        <button 
-          onClick={(e) => {
-            e.preventDefault();
+        <button
+          onClick={tap(() => {
             if (!boss && !isFeatureEnabled('staff_expense_management')) {
               showToast('Hauna ruhusa ya kuona/kuongeza matumizi.', 'error');
             } else {
               navigate('/matumizi');
             }
-          }}
+          })}
+          onPointerUp={tap(() => {
+            if (!boss && !isFeatureEnabled('staff_expense_management')) {
+              showToast('Hauna ruhusa ya kuona/kuongeza matumizi.', 'error');
+            } else {
+              navigate('/matumizi');
+            }
+          })}
           className={`flex items-center justify-center py-3.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold transition-all cursor-pointer select-none touch-manipulation ${
-            !boss && !isFeatureEnabled('staff_expense_management') 
-              ? 'opacity-50 text-gray-400 cursor-not-allowed' 
+            !boss && !isFeatureEnabled('staff_expense_management')
+              ? 'opacity-50 text-gray-400 cursor-not-allowed'
               : 'text-gray-700 active:bg-gray-50'
           }`}
-          style={{ 
+          style={{
             WebkitTapHighlightColor: 'transparent',
             WebkitTouchCallout: 'none',
             touchAction: 'manipulation'
@@ -429,10 +440,11 @@ export default function Dashibodi() {
           <DollarSign className={`w-4 h-4 mr-1.5 ${!boss && !isFeatureEnabled('staff_expense_management') ? 'text-gray-400' : 'text-red-500'}`} />
           {!boss && !isFeatureEnabled('staff_expense_management') ? 'Matumizi (Zuiwa)' : 'Matumizi'}
         </button>
-        <button 
-          onClick={(e) => { e.preventDefault(); navigate('/historia'); }}
+        <button
+          onClick={tap(() => { navigate('/historia'); })}
+          onPointerUp={tap(() => { navigate('/historia'); })}
           className="flex items-center justify-center py-3.5 bg-white border border-gray-200 rounded-xl shadow-sm text-xs font-bold text-gray-700 active:bg-gray-50 transition-all cursor-pointer select-none touch-manipulation"
-          style={{ 
+          style={{
             WebkitTapHighlightColor: 'transparent',
             WebkitTouchCallout: 'none',
             touchAction: 'manipulation'
@@ -447,8 +459,9 @@ export default function Dashibodi() {
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Muhtasari wa Mwezi</h2>
-          <button 
-            onClick={(e) => { e.preventDefault(); navigate('/historia'); }}
+          <button
+            onClick={tap(() => { navigate('/historia'); })}
+            onPointerUp={tap(() => { navigate('/historia'); })}
             className="text-sm font-medium text-blue-600 flex items-center bg-blue-50 px-3 py-1 rounded-full"
           >
             Historia <ChevronRight className="w-4 h-4 ml-1" />
@@ -523,7 +536,8 @@ export default function Dashibodi() {
           {pricingLossProducts.length > 0 && (
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); setShowLossModal(true); }}
+              onClick={tap(() => { setShowLossModal(true); })}
+              onPointerUp={tap(() => { setShowLossModal(true); })}
               className="p-3 bg-red-100 rounded-xl border border-red-200 flex items-start space-x-3 cursor-pointer transition-colors"
               style={{ touchAction: 'manipulation' }}
             >
@@ -540,7 +554,8 @@ export default function Dashibodi() {
           {pricingImplausibleProducts.length > 0 && (
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); setShowImplausibleModal(true); }}
+              onClick={tap(() => { setShowImplausibleModal(true); })}
+              onPointerUp={tap(() => { setShowImplausibleModal(true); })}
               className="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start space-x-3 cursor-pointer transition-colors"
               style={{ touchAction: 'manipulation' }}
             >
@@ -557,7 +572,8 @@ export default function Dashibodi() {
           {lowStockProducts.length > 0 && (
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); setShowLowStockModal(true); }}
+              onClick={tap(() => { setShowLowStockModal(true); })}
+              onPointerUp={tap(() => { setShowLowStockModal(true); })}
               className="p-3 bg-red-50 rounded-xl border border-red-100 flex items-start space-x-3 cursor-pointer transition-colors"
               style={{ touchAction: 'manipulation' }}
             >
@@ -574,7 +590,8 @@ export default function Dashibodi() {
           {isExpiryEnabled && expiredBatchesCount > 0 && (
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); navigate('/zaidi', { state: { openExpiryList: true } }); }}
+              onClick={tap(() => { navigate('/zaidi', { state: { openExpiryList: true } }); })}
+              onPointerUp={tap(() => { navigate('/zaidi', { state: { openExpiryList: true } }); })}
               className="p-3 bg-red-100 rounded-xl border border-red-200 flex items-start space-x-3 cursor-pointer transition-colors"
               style={{ touchAction: 'manipulation' }}
             >
@@ -591,7 +608,8 @@ export default function Dashibodi() {
           {isExpiryEnabled && expiringSoonBatchesCount > 0 && (
             <div
               role="button"
-              onClick={(e) => { e.preventDefault(); navigate('/zaidi', { state: { openExpiryList: true } }); }}
+              onClick={tap(() => { navigate('/zaidi', { state: { openExpiryList: true } }); })}
+              onPointerUp={tap(() => { navigate('/zaidi', { state: { openExpiryList: true } }); })}
               className="p-3 bg-orange-50 rounded-xl border border-orange-100 flex items-start space-x-3 cursor-pointer transition-colors"
               style={{ touchAction: 'manipulation' }}
             >
@@ -615,7 +633,11 @@ export default function Dashibodi() {
                 <AlertTriangle className="w-6 h-6 mr-2" />
                 <h2 className="text-xl font-bold">Bidhaa Zinazoisha</h2>
               </div>
-              <button onClick={() => { setShowLowStockModal(false); setSelectedProductForStock(null); }} className="p-2 bg-gray-100 rounded-full">
+              <button
+                onClick={tap(() => { setShowLowStockModal(false); setSelectedProductForStock(null); })}
+                onPointerUp={tap(() => { setShowLowStockModal(false); setSelectedProductForStock(null); })}
+                className="p-2 bg-gray-100 rounded-full"
+              >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -632,8 +654,9 @@ export default function Dashibodi() {
                         </p>
                       </div>
                       {canManageStock && (
-                        <button 
-                          onClick={() => setSelectedProductForStock(selectedProductForStock?.id === product.id ? null : product)}
+                        <button
+                          onClick={tap(() => setSelectedProductForStock(selectedProductForStock?.id === product.id ? null : product))}
+                          onPointerUp={tap(() => setSelectedProductForStock(selectedProductForStock?.id === product.id ? null : product))}
                           className={`p-2 rounded-xl transition-colors ${selectedProductForStock?.id === product.id ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}
                         >
                           {selectedProductForStock?.id === product.id ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
@@ -696,8 +719,9 @@ export default function Dashibodi() {
               )}
             </div>
             
-            <button 
-              onClick={() => { setShowLowStockModal(false); setSelectedProductForStock(null); }}
+            <button
+              onClick={tap(() => { setShowLowStockModal(false); setSelectedProductForStock(null); })}
+              onPointerUp={tap(() => { setShowLowStockModal(false); setSelectedProductForStock(null); })}
               className="w-full mt-6 py-4 bg-gray-100 text-gray-600 font-bold rounded-2xl"
             >
               Funga
@@ -714,7 +738,11 @@ export default function Dashibodi() {
                 <AlertCircle className="w-6 h-6 mr-2 flex-shrink-0" />
                 <h2 className="text-xl font-bold">Hasara Inayoweza Kuepukika</h2>
               </div>
-              <button onClick={() => setShowLossModal(false)} className="p-2 bg-gray-100 rounded-full">
+              <button
+                onClick={tap(() => setShowLossModal(false))}
+                onPointerUp={tap(() => setShowLossModal(false))}
+                className="p-2 bg-gray-100 rounded-full"
+              >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -731,9 +759,10 @@ export default function Dashibodi() {
                       Kila mauzo yataleta hasara ya TZS {(product.buy_price - product.sell_price).toLocaleString()}.
                     </p>
                     <button
-                      onClick={() => handleVerifyProductPricing(product.id)}
+                      onClick={tap(() => handleVerifyProductPricing(product.id))}
+                      onPointerUp={tap(() => handleVerifyProductPricing(product.id))}
                       className="bg-red-200 text-red-900 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-300 transition-all flex items-center gap-1 cursor-pointer shrink-0 select-none touch-manipulation"
-                      style={{ 
+                      style={{
                         WebkitTapHighlightColor: 'transparent',
                         WebkitTouchCallout: 'none',
                         touchAction: 'manipulation'
@@ -750,10 +779,11 @@ export default function Dashibodi() {
             </div>
             
             <div className="flex space-x-3 mt-6">
-              <button 
-                onClick={() => setShowLossModal(false)}
+              <button
+                onClick={tap(() => setShowLossModal(false))}
+                onPointerUp={tap(() => setShowLossModal(false))}
                 className="flex-1 py-4 bg-gray-200 text-gray-800 font-bold rounded-2xl cursor-pointer hover:bg-gray-300 transition-all select-none touch-manipulation"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -762,10 +792,11 @@ export default function Dashibodi() {
                 Funga
               </button>
               {pricingLossProducts.length > 0 && (
-                <button 
-                  onClick={handleVerifyAllProductPricing}
+                <button
+                  onClick={tap(() => handleVerifyAllProductPricing())}
+                  onPointerUp={tap(() => handleVerifyAllProductPricing())}
                   className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none touch-manipulation"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
@@ -788,7 +819,11 @@ export default function Dashibodi() {
                 <AlertCircle className="w-6 h-6 mr-2 flex-shrink-0" />
                 <h2 className="text-xl font-bold text-amber-700">Uhakiki wa Bei (Uwiano)</h2>
               </div>
-              <button onClick={() => setShowImplausibleModal(false)} className="p-2 bg-gray-100 rounded-full">
+              <button
+                onClick={tap(() => setShowImplausibleModal(false))}
+                onPointerUp={tap(() => setShowImplausibleModal(false))}
+                className="p-2 bg-gray-100 rounded-full"
+              >
                 <X className="w-5 h-5 text-gray-500" />
               </button>
             </div>
@@ -807,9 +842,10 @@ export default function Dashibodi() {
                         Uwiano wa bei hii ni tofauti (zaidi ya mara {Math.round(ratio)} ya kununulia). Tafadhali hakikisha kama si hitilafu ya kiuandishi.
                       </p>
                       <button
-                        onClick={() => handleVerifyProductPricing(product.id)}
+                        onClick={tap(() => handleVerifyProductPricing(product.id))}
+                        onPointerUp={tap(() => handleVerifyProductPricing(product.id))}
                         className="bg-amber-200 text-amber-905 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-amber-300 transition-all flex items-center gap-1 cursor-pointer shrink-0 select-none touch-manipulation"
-                        style={{ 
+                        style={{
                           WebkitTapHighlightColor: 'transparent',
                           WebkitTouchCallout: 'none',
                           touchAction: 'manipulation'
@@ -827,10 +863,11 @@ export default function Dashibodi() {
             </div>
             
             <div className="flex space-x-3 mt-6">
-              <button 
-                onClick={() => setShowImplausibleModal(false)}
+              <button
+                onClick={tap(() => setShowImplausibleModal(false))}
+                onPointerUp={tap(() => setShowImplausibleModal(false))}
                 className="flex-1 py-4 bg-gray-200 text-gray-800 font-bold rounded-2xl cursor-pointer hover:bg-gray-300 transition-all select-none touch-manipulation"
-                style={{ 
+                style={{
                   WebkitTapHighlightColor: 'transparent',
                   WebkitTouchCallout: 'none',
                   touchAction: 'manipulation'
@@ -839,10 +876,11 @@ export default function Dashibodi() {
                 Funga
               </button>
               {pricingImplausibleProducts.length > 0 && (
-                <button 
-                  onClick={handleVerifyAllProductPricing}
+                <button
+                  onClick={tap(() => handleVerifyAllProductPricing())}
+                  onPointerUp={tap(() => handleVerifyAllProductPricing())}
                   className="flex-1 py-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-2xl cursor-pointer transition-all flex items-center justify-center gap-1.5 select-none touch-manipulation"
-                  style={{ 
+                  style={{
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     touchAction: 'manipulation'
