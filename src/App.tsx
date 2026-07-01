@@ -7,7 +7,6 @@ import { SyncService } from './services/sync';
 import { notifications } from './services/notifications';
 import BottomNav from './components/BottomNav';
 import NotificationCenter from './components/NotificationCenter';
-import TapDebugOverlay from './components/TapDebugOverlay';
 import Dashibodi from './pages/Dashibodi';
 import Bidhaa from './pages/Bidhaa';
 import Kikapu from './pages/Kikapu';
@@ -714,7 +713,6 @@ export default function App() {
           )}
           {!needsShopSetup && <NotificationCenter />}
           {!needsShopSetup && <BottomNav />}
-          <TapDebugOverlay />
         </div>
       </LicenseGuard>
     </ErrorBoundary>
