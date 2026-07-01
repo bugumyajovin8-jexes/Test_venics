@@ -12,7 +12,7 @@ export default defineConfig(({mode}) => {
       react(), 
       tailwindcss(),
       VitePWA({
-        registerType: 'prompt',
+        registerType: 'autoUpdate',
         workbox: {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         },

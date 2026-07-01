@@ -5,15 +5,16 @@ import App from './App.tsx';
 import './index.css';
 import { registerSW } from 'virtual:pwa-register';
 
-// Register Service Worker for offline PWA support
-const updateSW = registerSW({
-  onNeedRefresh() {
-    if (confirm('Toleo jipya linapatikana. Je, unataka kusasisha?')) {
-      updateSW(true);
-    }
-  },
+// Register Service Worker for offline PWA support.
+// autoUpdate mode: new SW installs and activates automatically.
+// App.tsx listens for 'controllerchange' to do the actual page reload
+// (with a cart-in-progress guard so mid-sale reloads never happen).
+registerSW({
   onOfflineReady() {
-    console.log('App is ready to work offline');
+    console.log('[SW] App is ready to work offline');
+  },
+  onRegisteredSW(_swUrl, registration) {
+    console.log('[SW] Service worker registered:', registration?.scope);
   },
 });
 

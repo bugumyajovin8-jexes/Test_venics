@@ -110,6 +110,30 @@ export default function App() {
     }
   }, []);
 
+  // Strategy 0: SW controllerchange — fires when the new service worker takes over.
+  // This is the RIGHT moment to reload: the new SW is now active with new cached files,
+  // so the reload will actually serve the updated JS bundles (not the old ones).
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const handleControllerChange = () => {
+      const state = useStore.getState();
+      const isAtKikapu = window.location.href.includes('/kikapu');
+      const hasCartItems = state.cart && state.cart.length > 0;
+
+      if (isAtKikapu && hasCartItems) {
+        console.log('[SW] Update ready but sale in progress — reload deferred to version.json poll.');
+        return;
+      }
+
+      console.log('[SW] New service worker active. Reloading to apply update.');
+      window.location.reload();
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+    return () => navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+  }, []);
+
   // Strategy 1: The version.json Polling & Intelligent Auto-Reload Strategy
   useEffect(() => {
     let baselineVersion: string | null = null;
