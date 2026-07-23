@@ -188,22 +188,28 @@ export class SyncService {
 
   private static async drainQueue(): Promise<void> {
     while (this.requestQueue.length > 0) {
-      // Coalesce all enqueued requests to avoid running redundant sequential full/critical syncs
+      // Coalesce all enqueued requests to avoid running redundant sequential full/critical syncs.
+      //
+      // Coalescing must WIDEN the scope, never narrow it. 'critical' is the highest URGENCY but the
+      // smallest COVERAGE (it pulls neither `features` nor the feature-map rebuild), so the old
+      // "critical beats full" rule silently downgraded a queued 'full' into a 'critical' run and
+      // then cleared the queue — discarding it rather than deferring it. That is why an employee's
+      // "Ruhusa" tap often did nothing (yet still reported success) until they tapped again.
+      // 'full' is the only scope that is a superset of the others, and since neither 'critical' nor
+      // 'background' contains the other, any mix of scopes also has to be promoted to 'full'.
       let force = false;
-      let highestScope: SyncScope = 'background';
       for (const req of this.requestQueue) {
         force = force || req.force;
-        if (req.scope === 'critical') {
-          highestScope = 'critical';
-        } else if (req.scope === 'full' && highestScope !== 'critical') {
-          highestScope = 'full';
-        }
       }
-      
+      const scopes = new Set(this.requestQueue.map(r => r.scope));
+      const targetScope: SyncScope = scopes.has('full') || scopes.size > 1
+        ? 'full'
+        : [...scopes][0];
+
       // Clear the queue as our consolidated run will handle all requested sync operations
       this.requestQueue = [];
-      
-      await this.runOneSync(force, highestScope);
+
+      await this.runOneSync(force, targetScope);
     }
   }
 
@@ -375,10 +381,6 @@ export class SyncService {
       if (scope === 'full' && now - this.lastFullSyncStartedAt < 30_000) return;
     }
 
-    if (scope === 'critical') this.lastCriticalSyncStartedAt = now;
-    if (scope === 'background') this.lastBackgroundSyncStartedAt = now;
-    if (scope === 'full') this.lastFullSyncStartedAt = now;
-
     const state = useStore.getState();
     const user = state.user;
     if (!user?.shopId) return;
@@ -393,6 +395,17 @@ export class SyncService {
       }
       return;
     }
+
+    // Stamp the throttle only once the preconditions pass and this run is actually going ahead.
+    // Stamping before them meant an attempt that did ZERO work (no shopId yet, or a transient
+    // session failure right after login) still burned the 30s full-sync window, so the legitimate
+    // retry seconds later was silently skipped — the same "looks like it ran, but didn't" failure
+    // as the Ruhusa button. Safe against retry storms: sync() collapses concurrent callers into the
+    // single in-flight promise and returns early when offline.
+    const startedAt = Date.now();
+    if (scope === 'critical') this.lastCriticalSyncStartedAt = startedAt;
+    if (scope === 'background') this.lastBackgroundSyncStartedAt = startedAt;
+    if (scope === 'full') this.lastFullSyncStartedAt = startedAt;
 
     const shopId = user.shopId;
     const settings = await db.settings.get(1);
@@ -490,7 +503,14 @@ export class SyncService {
     } else {
       const tables = [...ALL_TABLES];
       if (!isBoss) {
-        targets = tables.filter(t => !['shops', 'users'].includes(t));
+        // Staff DO pull their own `shops` row — desktop has always done this, mobile hadn't.
+        // Without it `shop` is undefined on an employee's device, so `shop?.enable_expiry` reads
+        // false and the entire expiry feature silently no-ops for them: expired stock stays
+        // sellable, the "Imeisha muda" cards never render, Dashibodi expiry counts read 0, and
+        // notify_expiry_days never arrives. It is a single row on a 5-minute pull throttle, and RLS
+        // already permits staff to SELECT their own shop. Staff still never PUSH shops — pushTable()
+        // blocks that separately.
+        targets = tables.filter(t => !['users'].includes(t));
       } else {
         targets = tables as string[];
       }
@@ -627,6 +647,22 @@ export class SyncService {
 
     let unsynced = await table.where('synced').equals(0).toArray();
     if (unsynced.length === 0) return;
+
+    // Only ever push rows belonging to the ACTIVE shop. The local cache retains rows from every
+    // shop this device has logged into, and every RLS policy resolves the caller's shop to the
+    // single `users.shop_id` — so pushing another shop's row is guaranteed to be rejected (42501).
+    // Filtered-out rows simply stay `synced: 0` and go up when the user switches back to that
+    // shop; that is safe, whereas pushing them is not. Rows carrying no shop_id at all are left
+    // alone rather than being stranded here forever.
+    const activeShopId = useStore.getState().user?.shopId;
+    if (activeShopId) {
+      unsynced = unsynced.filter((record: any) => {
+        // `shops` rows identify their shop by their own primary key, not a shop_id column.
+        const owner = tableName === 'shops' ? record.id : record.shop_id;
+        return owner === undefined || owner === null || owner === activeShopId;
+      });
+      if (unsynced.length === 0) return;
+    }
 
     if (tableName === 'audit_logs') {
       const currentUser = useStore.getState().user;

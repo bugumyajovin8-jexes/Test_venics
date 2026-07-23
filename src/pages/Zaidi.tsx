@@ -24,7 +24,7 @@ const hasExpiryTracking = (p: any) =>
 
 export default function Zaidi() {
   const tap = useTap();
-  const { user, logout, showAlert, showConfirm, isBoss, isFeatureEnabled, syncHealth } = useStore();
+  const { user, logout, showAlert, showConfirm, showToast, isBoss, isFeatureEnabled, syncHealth } = useStore();
   const location = useLocation();
   const settings = useLiveQuery(() => db.settings.get(1));
   const currency = settings?.currency || 'TZS';
@@ -1419,7 +1419,9 @@ export default function Zaidi() {
                   setIsSyncing(true);
                   try {
                     await SyncService.sync(true, 'full');
-                    showAlert('Imefanikiwa', 'Ruhusa zako zimesasishwa kikamilifu!');
+                    // Toast, not showAlert — a success confirmation shouldn't block the user
+                    // behind an "Okay" tap.
+                    showToast('Ruhusa zako zimesasishwa kikamilifu!', 'success');
                   } catch (e) {
                     console.error('Feature sync error:', e);
                     showAlert('Kosa', 'Imeshindwa kusasisha ruhusa. Jaribu tena baadae au unganisha mtandao vizuri.');
@@ -1436,7 +1438,9 @@ export default function Zaidi() {
                   setIsSyncing(true);
                   try {
                     await SyncService.sync(true, 'full');
-                    showAlert('Imefanikiwa', 'Ruhusa zako zimesasishwa kikamilifu!');
+                    // Toast, not showAlert — a success confirmation shouldn't block the user
+                    // behind an "Okay" tap.
+                    showToast('Ruhusa zako zimesasishwa kikamilifu!', 'success');
                   } catch (e) {
                     console.error('Feature sync error:', e);
                     showAlert('Kosa', 'Imeshindwa kusasisha ruhusa. Jaribu tena baadae au unganisha mtandao vizuri.');
