@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="sw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Venics Sales</title>
+    <style>
+      /* Critical splash styles — inlined so the very first paint is already branded
+         (no white flash), and self-removed the instant React renders into #root. */
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background: #0f172a; }
+      #root { min-height: 100vh; min-height: 100dvh; }
+
+      .vx-splash {
+        position: fixed; inset: 0; z-index: 2147483647;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: radial-gradient(130% 100% at 50% -10%, #1e293b 0%, #0f172a 55%, #0b1020 100%);
+        color: #f8fafc; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      /* Soft drifting aurora glows — pure radial gradients (no filter:blur) for cheap GPU compositing */
+      .vx-glow { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform, opacity; }
+      .vx-glow-a {
+        width: 420px; height: 420px; top: 8%; left: 50%;
+        background: radial-gradient(circle, rgba(59,130,246,0.22) 0%, rgba(15,23,42,0) 70%);
+        transform: translate(-50%, -30%); animation: vx-float-a 9s ease-in-out infinite;
+      }
+      .vx-glow-b {
+        width: 360px; height: 360px; bottom: 6%; left: 50%;
+        background: radial-gradient(circle, rgba(6,182,212,0.16) 0%, rgba(15,23,42,0) 70%);
+        transform: translate(-50%, 25%); animation: vx-float-b 11s ease-in-out infinite;
+      }
+
+      .vx-stage {
+        position: relative; z-index: 1;
+        display: flex; flex-direction: column; align-items: center;
+        animation: vx-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .vx-logo { margin-bottom: 1.5rem; filter: drop-shadow(0 6px 18px rgba(59,130,246,0.35)); }
+      .vx-ring-cw  { transform-origin: 50px 50px; animation: vx-spin-cw 3s linear infinite; }
+      .vx-ring-ccw { transform-origin: 50px 50px; animation: vx-spin-ccw 2.2s linear infinite; }
+      .vx-v        { animation: vx-vpulse 2.5s ease-in-out infinite; transform-origin: 50px 50px; filter: drop-shadow(0 0 2.5px rgba(34,211,238,0.9)) drop-shadow(0 0 7px rgba(59,130,246,0.6)); }
+
+      .vx-name {
+        font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.3rem;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent; color: transparent;
+      }
+      .vx-sub {
+        font-size: 0.75rem; font-weight: 600; color: #94a3b8;
+        letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 2rem;
+      }
+
+      .vx-bar {
+        position: relative; width: 200px; max-width: 62vw; height: 4px;
+        border-radius: 999px; background: rgba(148,163,184,0.16); overflow: hidden;
+      }
+      .vx-bar-fill {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 6%; border-radius: 999px;
+        background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
+        box-shadow: 0 0 14px rgba(59,130,246,0.55);
+        animation: vx-fill 12s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
+      }
+      .vx-bar-fill::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+        transform: translateX(-100%); animation: vx-shimmer 1.5s ease-in-out infinite;
+      }
+
+      .vx-msg {
+        margin-top: 1.1rem; height: 1.1rem; font-size: 0.82rem; font-weight: 500;
+        color: #cbd5e1; letter-spacing: 0.01em; transition: opacity 0.25s ease;
+      }
+
+      @keyframes vx-spin-cw  { to { transform: rotate(360deg); } }
+      @keyframes vx-spin-ccw { to { transform: rotate(-360deg); } }
+      @keyframes vx-vpulse   { 0%,100% { opacity: 0.9; } 50% { opacity: 1; } }
+      @keyframes vx-rise     { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+      @keyframes vx-fill     { 0% { width: 6%; } 55% { width: 68%; } 100% { width: 92%; } }
+      @keyframes vx-shimmer  { 0% { transform: translateX(-100%); } 100% { transform: translateX(240%); } }
+      @keyframes vx-float-a  { 0%,100% { transform: translate(-50%, -30%); } 50% { transform: translate(-42%, -22%); } }
+      @keyframes vx-float-b  { 0%,100% { transform: translate(-50%, 25%); } 50% { transform: translate(-58%, 18%); } }
+
+      @media (prefers-reduced-motion: reduce) {
+        .vx-ring-cw, .vx-ring-ccw, .vx-v, .vx-glow-a, .vx-glow-b,
+        .vx-bar-fill, .vx-bar-fill::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; }
+        .vx-bar-fill { width: 55%; }
+      }
+    </style>
+    <script>
+      (function() {
+        window.__reactMounted = false;
+        window.addEventListener('error', function(e) {
+          if (e.message && (
+            e.message.indexOf('ChunkLoadError') > -1 ||
+            e.message.indexOf('Failed to fetch') > -1 ||
+            e.message.indexOf('script error') > -1
+          )) {
+            triggerRecovery("Chunk load error: " + e.message, true);
+          }
+        }, true);
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            // A branded splash now lives inside #root, so root.children.length is never
+            // 0 and can't be used as the "did it mount?" test. The only reliable signal
+            // is window.__reactMounted, which main.tsx sets right after render().
+            if (!window.__reactMounted) {
+              triggerRecovery("App failed to mount within 15 seconds", false);
+            }
+          }, 15000);
+        });
+        function triggerRecovery(reason, hard) {
+          console.warn("Auto-recovery triggered: " + reason);
+          var now = Date.now();
+          var lastRecovery = localStorage.getItem('last_auto_recovery_time');
+          if (lastRecovery && (now - parseInt(lastRecovery, 10)) < 60000) {
+            console.error("Auto-recovery already triggered recently. Aborting to prevent loop.");
+            return;
+          }
+          localStorage.setItem('last_auto_recovery_time', now.toString());
+          // Soft recovery (slow / silent-hang mount): reload REUSING the cache so the
+          // already-downloaded assets mount fast. Do NOT clear caches here — that just
+          // forces a slow re-download and makes a first load worse.
+          if (!hard) {
+            window.location.reload();
+            return;
+          }
+          // Hard recovery (genuine broken/purged chunk): wipe SW + caches, then reload fresh.
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              var p = [];
+              for (var i = 0; i < regs.length; i++) { p.push(regs[i].unregister()); }
+              return Promise.all(p);
+            }).catch(function(err) {
+              console.error(err);
+            }).then(clearCaches);
+          } else {
+            clearCaches();
+          }
+          function clearCaches() {
+            if ('caches' in window) {
+              caches.keys().then(function(keys) {
+                var p = [];
+                for (var i = 0; i < keys.length; i++) { p.push(caches.delete(keys[i])); }
+                return Promise.all(p);
+              }).catch(function(err) {
+                console.error(err);
+              }).then(reloadPage);
+            } else {
+              reloadPage();
+            }
+          }
+          function reloadPage() {
+            var url = new URL(window.location.href);
+            url.searchParams.set('cv', Date.now().toString());
+            window.location.replace(url.href);
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Instant branded splash. React replaces this whole subtree on mount. -->
+      <div class="vx-splash" role="status" aria-live="polite" aria-label="Inapakia Venics Sales">
+        <div class="vx-glow vx-glow-a"></div>
+        <div class="vx-glow vx-glow-b"></div>
+
+        <div class="vx-stage">
+          <svg class="vx-logo" width="92" height="92" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="vx-out" x1="12" y1="12" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#3b82f6" />
+                <stop offset="100%" stop-color="#06b6d4" />
+              </linearGradient>
+              <linearGradient id="vx-in" x1="22" y1="22" x2="78" y2="78" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="100%" stop-color="#3b82f6" />
+              </linearGradient>
+              <linearGradient id="vx-vg" x1="50" y1="30" x2="50" y2="74" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#1d4ed8" />
+              </linearGradient>
+            </defs>
+            <circle class="vx-ring-cw"  cx="50" cy="50" r="41" stroke="url(#vx-out)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="165 92" />
+            <circle class="vx-ring-ccw" cx="50" cy="50" r="29" stroke="url(#vx-in)"  stroke-width="3.5" stroke-linecap="round" stroke-dasharray="110 72" />
+            <g class="vx-v">
+              <path d="M34 33 L50 67 L66 33" fill="none" stroke="url(#vx-vg)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+          </svg>
+
+          <div class="vx-name">Venics Sales</div>
+          <div class="vx-sub">Mfumo wa Mauzo</div>
+
+          <div class="vx-bar"><div class="vx-bar-fill"></div></div>
+          <div class="vx-msg" id="vx-msg">Inapakia...</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Rotate the loading message to give a sense of progress. Fully guarded so it
+      // never touches the DOM after React has taken over #root.
+      (function() {
+        var msgs = [
+          "Inaandaa mfumo wako...",
+          "Inapanga taarifa zako...",
+          "Inakamilisha maandalizi...",
+          "Sekunde chache zimebaki...",
+          "Karibu tayari..."
+        ];
+        function show(idx) {
+          if (window.__reactMounted) return;
+          var el = document.getElementById('vx-msg');
+          if (!el) return;
+          el.style.opacity = '0';
+          setTimeout(function() {
+            if (window.__reactMounted) return;
+            var e = document.getElementById('vx-msg');
+            if (!e) return;
+            e.textContent = msgs[idx];
+            e.style.opacity = '1';
+          }, 220);
+        }
+        // Absolute times (ms) at which each successive message appears.
+        [1800, 4200, 7200, 10200, 13000].forEach(function(t, k) {
+          setTimeout(function() { show(k); }, t);
+        });
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

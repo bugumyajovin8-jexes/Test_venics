@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer base {
+  button {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Press feedback for taps.
+
+   IMPORTANT (iOS Safari click-drop bug): the press-feedback must NOT use
+   `transform` (scale, etc.). On iOS WebKit, a transform applied to the very
+   element under the finger at touchend time can make Safari fail to synthesize
+   the `click` event for that tap — the touchstart/touchend fire normally but
+   the click is silently dropped, so the button's onClick (e.g. bottom-nav
+   navigation) never runs and a second tap is needed. This was confirmed on a
+   real iPhone with on-screen TS/TE/CL counters: taps showed matching
+   touchstart+touchend with NO click ("drop"), recovering on the next tap.
+
+   Opacity is GPU-composited, never moves the element, and does not affect
+   hit-testing, so it gives clear press feedback with zero risk to click
+   synthesis. Unlayered on purpose so it wins over any Tailwind utility. */
+button:active,
+[role="button"]:active {
+  opacity: 0.55;
+  /* Neutralize any transform-based press feedback (e.g. Tailwind's
+     `active:scale-95` used on various buttons throughout the app) — being
+     unlayered, this overrides Tailwind's utilities layer, so no button's tap
+     target is transformed at touchend, app-wide. */
+  transform: none;
+  transition-duration: 0s;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pt-safe-header {
+  padding-top: max(env(safe-area-inset-top, 0px), 12px);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media all and (display-mode: standalone) {
+  .pt-safe-standalone {
+    padding-top: max(env(safe-area-inset-top, 0px), 24px);
+  }
+}
