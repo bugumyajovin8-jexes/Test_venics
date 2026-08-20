@@ -1,181 +1,30 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState } from 'react';
+import { useTap } from '../utils/useTap';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
-import {
-  startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths, format,
-} from 'date-fns';
-import {
-  AlertCircle, ShieldAlert, TrendingUp, Zap, Users, ArrowRight, ArrowLeft, Check,
-  Wallet, Smartphone, Flame, Target, Sparkles,
-} from 'lucide-react';
-
 import { db } from '../db';
 import { useStore } from '../store';
-import { useTap } from '../utils/useTap';
-import { useMagnified } from '../utils/useMagnified';
-import { formatCurrency } from '../utils/format';
+import { format, subDays, startOfDay, endOfDay, isWithinInterval, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { AlertCircle, Zap, TrendingUp, TrendingDown, Star, Users, AlertTriangle, Lightbulb, ArrowLeft, Smartphone, Wallet, Check } from 'lucide-react';
+import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { SyncService } from '../services/sync';
-import {
-  buildIntel, writeGoal, suggestGoal,
-  type Mode, type IntelCard,
-} from '../utils/executiveIntel';
 
 import EmployeeReports from '../components/EmployeeReports';
 import MshauriChat from '../components/MshauriChat';
-import ReadOnlyNotice from '../components/ReadOnlyNotice';
+import { useReadOnly } from '../hooks/useReadOnly';
 
-const MODE_META: Record<Mode, { label: string; icon: typeof Zap; accent: string; ring: string }> = {
-  pulse:  { label: 'Leo',   icon: Zap,         accent: 'text-blue-600',    ring: 'bg-blue-600' },
-  risk:   { label: 'Kinga', icon: ShieldAlert, accent: 'text-rose-600',    ring: 'bg-rose-600' },
-  growth: { label: 'Kukua', icon: TrendingUp,  accent: 'text-emerald-600', ring: 'bg-emerald-600' },
-};
-
-/** A number that climbs to its value — makes progress feel earned. */
-function useCountUp(value: number, ms = 700): number {
-  const [shown, setShown] = useState(value);
-  const fromRef = useRef(value);
-
-  useEffect(() => {
-    const from = fromRef.current;
-    if (from === value) return;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      fromRef.current = value;
-      setShown(value);
-      return;
-    }
-
-    const started = performance.now();
-    let raf = 0;
-    const step = (t: number) => {
-      const p = Math.min((t - started) / ms, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      setShown(Math.round(from + (value - from) * eased));
-      if (p < 1) raf = requestAnimationFrame(step);
-      else fromRef.current = value;
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [value, ms]);
-
-  return shown;
-}
-
-function GoalRing({
-  revenue, goal, pct, currency, onEdit, magnified,
-}: {
-  revenue: number; goal: number; pct: number; currency: string;
-  onEdit: () => void; magnified: boolean;
-}) {
-  const tap = useTap();
-  const shown = useCountUp(revenue);
-  const size = magnified ? 200 : 176;
-  const stroke = magnified ? 15 : 13;
-  const r = (size - stroke) / 2 - 2;
-  const circumference = 2 * Math.PI * r;
-  const hit = pct >= 1;
-  const remaining = Math.max(0, goal - revenue);
-
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90">
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e5e7eb" strokeWidth={stroke} />
-          <motion.circle
-            cx={size / 2} cy={size / 2} r={r} fill="none"
-            stroke={hit ? '#059669' : '#2563eb'}
-            strokeWidth={stroke} strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={false}
-            animate={{ strokeDashoffset: circumference * (1 - pct) }}
-            transition={{ duration: 0.9, ease: 'easeOut' }}
-          />
-        </svg>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-          <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Mauzo ya leo</span>
-          <span className={`font-black leading-none mt-1 ${magnified ? 'text-2xl' : 'text-xl'} ${hit ? 'text-emerald-700' : 'text-gray-900'}`}>
-            {shown.toLocaleString()}
-          </span>
-          <span className="text-[10px] font-bold text-gray-400 mt-1">lengo {goal.toLocaleString()}</span>
-        </div>
-      </div>
-
-      {hit ? (
-        <div className="mt-3 bg-emerald-50 border border-emerald-100 text-emerald-800 px-4 py-2 rounded-2xl text-sm font-black">
-          🎉 Umefikia lengo la leo!
-        </div>
-      ) : (
-        <div className="mt-3 text-sm font-bold text-gray-600">
-          Umebakiza <span className="text-gray-900">{formatCurrency(remaining, currency)}</span>
-        </div>
-      )}
-
-      <button
-        onClick={tap(onEdit)}
-        onPointerUp={tap(onEdit)}
-        className="mt-2 text-[11px] font-bold text-blue-600 underline decoration-dashed underline-offset-4 cursor-pointer"
-      >
-        Badilisha lengo
-      </button>
-    </div>
-  );
-}
-
-function TrendStrip({
-  trend, streak, magnified,
-}: {
-  trend: Array<{ date: Date; revenue: number; hitGoal: boolean }>;
-  streak: number; magnified: boolean;
-}) {
-  const peak = Math.max(...trend.map((d) => d.revenue), 1);
-
-  return (
-    <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Siku 7 zilizopita</h3>
-        {streak > 1 && (
-          <span className="flex items-center gap-1 text-[11px] font-black text-orange-700 bg-orange-50 border border-orange-100 px-2.5 py-1 rounded-full">
-            <Flame className="w-3.5 h-3.5" /> Siku {streak} mfululizo
-          </span>
-        )}
-      </div>
-
-      <div className={`flex items-end justify-between gap-1.5 ${magnified ? 'h-28' : 'h-20'}`}>
-        {trend.map((d, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5">
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: `${Math.max(6, (d.revenue / peak) * 100)}%` }}
-              transition={{ duration: 0.5, delay: i * 0.05 }}
-              className={`w-full rounded-t-lg ${d.hitGoal ? 'bg-emerald-500' : d.revenue > 0 ? 'bg-blue-400' : 'bg-gray-200'}`}
-            />
-            <span className="text-[9px] font-bold text-gray-400">{format(d.date, 'EEE')[0]}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Miamala (Cash / Simu) — kept exactly as shop owners already know it.
- *
- * The three familiar entry points at the bottom of this page are deliberately
- * unchanged: the modes above are new, so the way out of the page should not be.
- */
 function PaymentBreakdownWidget({ shopId }: { shopId: string }) {
   const tap = useTap();
   const [isOpen, setIsOpen] = useState(false);
   const [period, setPeriod] = useState<'today' | 'yesterday' | 'this_month' | 'last_month'>('today');
 
   const paymentData = useLiveQuery(async () => {
-    if (!shopId) return { cash: 0, mobile: 0, total: 0 };
-
+    if (!shopId) return { cash: 0, mobile: 0 };
+    
     let startIso: string;
     let endIso: string;
     const now = new Date();
-
+    
     if (period === 'today') {
       startIso = startOfDay(now).toISOString();
       endIso = endOfDay(now).toISOString();
@@ -191,7 +40,8 @@ function PaymentBreakdownWidget({ shopId }: { shopId: string }) {
       startIso = startOfMonth(lm).toISOString();
       endIso = endOfMonth(lm).toISOString();
     }
-
+    
+    // Using a faster index based approach to just grab sales for the period
     const sales = await db.sales
       .where('[shop_id+isDeleted+created_at]')
       .between([shopId, 0, startIso], [shopId, 0, endIso])
@@ -199,8 +49,9 @@ function PaymentBreakdownWidget({ shopId }: { shopId: string }) {
 
     let cash = 0;
     let mobile = 0;
-
+    
     sales.forEach(s => {
+      // Exclude cancelled/refunded if they are not considered valid revenue
       if (s.status !== 'cancelled' && s.status !== 'refunded') {
         const amount = s.total_amount || 0;
         if (s.payment_method === 'cash') {
@@ -214,14 +65,9 @@ function PaymentBreakdownWidget({ shopId }: { shopId: string }) {
     return { cash, mobile, total: cash + mobile };
   }, [shopId, period], { cash: 0, mobile: 0, total: 0 });
 
-  const tabs: Array<['today' | 'yesterday' | 'this_month' | 'last_month', string]> = [
-    ['today', 'Leo'], ['yesterday', 'Jana'], ['this_month', 'Mwezi Huu'], ['last_month', 'Mwezi Uliopita'],
-  ];
-
   return (
     <div className="space-y-4">
       <button
-        data-tour="payment-breakdown"
         onClick={tap(() => setIsOpen(!isOpen))}
         onPointerUp={tap(() => setIsOpen(!isOpen))}
         className="w-full bg-indigo-50 text-indigo-700 font-bold py-5 rounded-[2rem] flex items-center justify-between px-6 transition-all active:scale-95 border border-indigo-100"
@@ -237,25 +83,52 @@ function PaymentBreakdownWidget({ shopId }: { shopId: string }) {
       </button>
 
       {isOpen && (
-        <motion.div
+        <motion.div 
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden"
         >
           <div className="flex space-x-2 mb-6 overflow-x-auto scrollbar-hide pb-2">
-            {tabs.map(([key, label]) => (
-              <button
-                key={key}
-                onClick={tap(() => setPeriod(key))}
-                onPointerUp={tap(() => setPeriod(key))}
-                className={`flex-shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer touch-manipulation select-none active:scale-95 ${
-                  period === key ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-gray-100 text-gray-600'
-                }`}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                {label}
-              </button>
-            ))}
+            <button
+              onClick={tap(() => setPeriod('today'))}
+              onPointerUp={tap(() => setPeriod('today'))}
+              className={`flex-shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer touch-manipulation select-none active:scale-95 ${
+                period === 'today' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              Leo
+            </button>
+            <button
+              onClick={tap(() => setPeriod('yesterday'))}
+              onPointerUp={tap(() => setPeriod('yesterday'))}
+              className={`flex-shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer touch-manipulation select-none active:scale-95 ${
+                period === 'yesterday' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              Jana
+            </button>
+            <button
+              onClick={tap(() => setPeriod('this_month'))}
+              onPointerUp={tap(() => setPeriod('this_month'))}
+              className={`flex-shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer touch-manipulation select-none active:scale-95 ${
+                period === 'this_month' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              Mwezi Huu
+            </button>
+            <button
+              onClick={tap(() => setPeriod('last_month'))}
+              onPointerUp={tap(() => setPeriod('last_month'))}
+              className={`flex-shrink-0 px-4 py-2 text-xs font-bold rounded-full transition-all cursor-pointer touch-manipulation select-none active:scale-95 ${
+                period === 'last_month' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              Mwezi Uliopita
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -271,7 +144,7 @@ function PaymentBreakdownWidget({ shopId }: { shopId: string }) {
                 {paymentData.total > 0 ? Math.round((paymentData.cash / paymentData.total) * 100) : 0}% ya mapato
               </span>
             </div>
-
+            
             <div className="bg-sky-50 rounded-2xl p-4 border border-sky-100 flex flex-col justify-center">
               <div className="flex items-center text-sky-800 mb-1">
                 <Smartphone className="w-4 h-4 mr-1.5" />
@@ -291,146 +164,267 @@ function PaymentBreakdownWidget({ shopId }: { shopId: string }) {
   );
 }
 
-function CardView({ card, currency, onAct, magnified }: {
-  card: IntelCard; currency: string; onAct: (c: IntelCard) => void; magnified: boolean;
-}) {
-  const tap = useTap();
-  const tones = {
-    danger: 'bg-rose-50 border-rose-100 text-rose-900',
-    warn:   'bg-amber-50 border-amber-100 text-amber-900',
-    info:   'bg-slate-50 border-slate-200 text-slate-800',
-    good:   'bg-emerald-50 border-emerald-100 text-emerald-900',
-  } as const;
-  const buttons = {
-    danger: 'bg-rose-600', warn: 'bg-amber-600', info: 'bg-slate-700', good: 'bg-emerald-600',
-  } as const;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`p-4 rounded-[1.75rem] border ${tones[card.tone]}`}
-    >
-      <div className={`flex ${magnified ? 'flex-col gap-2' : 'items-start justify-between gap-3'}`}>
-        <h4 className="font-black text-[15px] leading-snug flex-1">{card.title}</h4>
-        {card.amount > 0 && (
-          <span className="shrink-0 font-black text-sm bg-white/70 px-2.5 py-1 rounded-xl">
-            {formatCurrency(card.amount, currency)}
-          </span>
-        )}
-      </div>
-
-      <p className="text-[12.5px] leading-relaxed mt-1.5 opacity-90">{card.detail}</p>
-
-      {card.action && (
-        <button
-          onClick={tap(() => onAct(card))}
-          onPointerUp={tap(() => onAct(card))}
-          className={`mt-3 w-full ${buttons[card.tone]} text-white font-bold text-sm py-2.5 rounded-2xl flex items-center justify-center gap-1.5 cursor-pointer`}
-        >
-          {card.action.label} <ArrowRight className="w-4 h-4" />
-        </button>
-      )}
-    </motion.div>
-  );
-}
-
 export default function ExecutiveDashboard() {
   const tap = useTap();
-  const navigate = useNavigate();
-  const magnified = useMagnified();
   const { user } = useStore();
-  const shopId = user?.shopId || '';
-
+  const navigate = useNavigate();
+  const readOnly = useReadOnly();
   const [showEmployeeReports, setShowEmployeeReports] = useState(false);
-  const [manualMode, setManualMode] = useState<Mode | null>(null);
-  const [editingGoal, setEditingGoal] = useState(false);
-  const [goalDraft, setGoalDraft] = useState('');
 
-  const since = useMemo(() => startOfDay(subDays(new Date(), 29)).toISOString(), []);
-  const settings = useLiveQuery(() => db.settings.get(1));
-  const currency = settings?.currency || 'TZS';
-
-  const shop = useLiveQuery(
-    () => (shopId ? db.shops.get(shopId) : Promise.resolve(undefined)), [shopId],
-  );
-
-  const sales = useLiveQuery(async () => {
-    if (!shopId) return [];
-    return db.sales.where('[shop_id+isDeleted+created_at]')
-      .between([shopId, 0, since], [shopId, 0, '￿']).toArray();
-  }, [shopId, since]) || [];
-
-  const products = useLiveQuery(() => {
-    if (!shopId) return [];
-    return db.products.where('[shop_id+isDeleted]').equals([shopId, 0]).toArray();
-  }, [shopId]) || [];
-
-  // Kept as its own query so the first paint never waits on line items.
-  const saleItems = useLiveQuery(async () => {
-    if (!shopId || sales.length === 0) return [];
-    return db.saleItems.where('sale_id').anyOf(sales.map((s) => s.id))
-      .filter((i) => i.isDeleted === 0).toArray();
-  }, [shopId, sales]) || [];
-
-  const expenses = useLiveQuery(async () => {
-    if (!shopId) return [];
-    return db.expenses.where('[shop_id+isDeleted+date]')
-      .between([shopId, 0, since], [shopId, 0, '￿']).toArray();
-  }, [shopId, since]) || [];
-
-  const auditLogs = useLiveQuery(async () => {
-    if (!shopId) return [];
-    const from = startOfDay(subDays(new Date(), 7)).toISOString();
-    return db.auditLogs.where('[shop_id+isDeleted+created_at]')
-      .between([shopId, 0, from], [shopId, 0, '￿']).toArray();
-  }, [shopId]) || [];
-
-  const users = useLiveQuery(() => {
-    if (!shopId) return [];
-    return db.users.where('shop_id').equals(shopId).toArray();
-  }, [shopId]) || [];
-
-  const debtPayments = useLiveQuery(() => {
-    if (!shopId) return [];
-    return db.debtPayments.where('shop_id').equals(shopId).toArray();
-  }, [shopId]) || [];
-
-  const intel = useMemo(
-    () => buildIntel({ shop, shopId, sales, saleItems, products, expenses, auditLogs, users, debtPayments }),
-    [shop, shopId, sales, saleItems, products, expenses, auditLogs, users, debtPayments],
-  );
-
-  const mode = manualMode ?? intel.mode;
-
-  const act = (card: IntelCard) => {
-    if (!card.action) return;
-    navigate(
-      card.action.route,
-      card.action.spotlight ? { state: { spotlight: card.action.spotlight } } : undefined,
-    );
-  };
-
-  const verifyAllPricing = async () => {
-    const toVerify = products.filter(
-      (p) => p.pricing_verified !== 1 && p.buy_price > 0 && p.sell_price <= p.buy_price,
-    );
-    if (!toVerify.length) return;
+  // Marking a price as verified is a write, so a lapsed shop gets the licence
+  // sheet instead. Checked in the handlers rather than on the three buttons that
+  // call them, so nothing is missed. The Dexie guard would refuse these anyway —
+  // this is what turns a silent failure into an explanation.
+  const handleVerifyProductPricing = async (productId: string) => {
+    if (readOnly.locked) {
+      readOnly.showLockedSheet();
+      return;
+    }
     try {
-      await db.transaction('rw', [db.products], async () => {
-        for (const p of toVerify) await db.products.update(p.id, { pricing_verified: 1, synced: 0 });
-      });
+      await db.products.update(productId, { pricing_verified: 1, synced: 0 });
       SyncService.sync();
     } catch (err) {
-      console.error('Failed to verify prices:', err);
+      console.error('Failed to verify product price in ExecutiveDashboard:', err);
     }
   };
 
-  const saveGoal = () => {
-    const n = Number(goalDraft.replace(/[^\d]/g, ''));
-    if (Number.isFinite(n) && n > 0) writeGoal(shopId, n);
-    setEditingGoal(false);
+  const handleVerifyAllProductPricing = async () => {
+    if (readOnly.locked) {
+      readOnly.showLockedSheet();
+      return;
+    }
+    try {
+      if (!user?.shopId) return;
+      const productsToVerify = products.filter(p => {
+        if (p.pricing_verified === 1) return false;
+        if (p.buy_price > 0) {
+          if (p.sell_price <= p.buy_price) return true;
+          const ratio = p.sell_price / p.buy_price;
+          if (ratio > 5) return true;
+        }
+        return false;
+      });
+      
+      if (productsToVerify.length === 0) return;
+
+      await db.transaction('rw', [db.products], async () => {
+        for (const p of productsToVerify) {
+          await db.products.update(p.id, { pricing_verified: 1, synced: 0 });
+        }
+      });
+      SyncService.sync();
+    } catch (err) {
+      console.error('Failed to verify all product prices in ExecutiveDashboard:', err);
+    }
   };
+  
+  // Fetch all necessary data - Optimized to load only yesterday and today's sales to support large scales
+  const sales = useLiveQuery(async () => {
+    if (!user?.shopId) return [];
+    const twoDaysAgoIso = startOfDay(subDays(new Date(), 1)).toISOString();
+    return db.sales
+      .where('[shop_id+isDeleted+created_at]')
+      .between([user.shopId, 0, twoDaysAgoIso], [user.shopId, 0, '\uffff'])
+      .toArray();
+  }, [user?.shopId]) || [];
+
+  const products = useLiveQuery(() => {
+    if (!user?.shopId) return [];
+    return db.products.where('[shop_id+isDeleted]').equals([user.shopId, 0]).toArray();
+  }, [user?.shopId]) || [];
+
+  const saleItems = useLiveQuery(async () => {
+    if (!user?.shopId || sales.length === 0) return [];
+    const saleIds = sales.map(s => s.id);
+    return db.saleItems
+      .where('sale_id')
+      .anyOf(saleIds)
+      .filter(i => i.isDeleted === 0)
+      .toArray();
+  }, [user?.shopId, sales]) || [];
+
+  const auditLogs = useLiveQuery(async () => {
+    if (!user?.shopId) return [];
+    const twoDaysAgoIso = startOfDay(subDays(new Date(), 1)).toISOString();
+    return db.auditLogs
+      .where('[shop_id+isDeleted+created_at]')
+      .between([user.shopId, 0, twoDaysAgoIso], [user.shopId, 0, '\uffff'])
+      .toArray();
+  }, [user?.shopId]) || [];
+
+  const users = useLiveQuery(() => {
+    if (!user?.shopId) return [];
+    return db.users.where('shop_id').equals(user.shopId).toArray();
+  }, [user?.shopId]) || [];
+
+  const insights = useMemo(() => {
+    const now = new Date();
+    const todayStart = startOfDay(now);
+    const todayEnd = endOfDay(now);
+    const yesterdayStart = startOfDay(subDays(now, 1));
+    const yesterdayEnd = endOfDay(subDays(now, 1));
+
+    const todayInterval = { start: todayStart, end: todayEnd };
+    const yesterdayInterval = { start: yesterdayStart, end: yesterdayEnd };
+
+    // 1. Sales & Profit Comparison
+    const todaySales = sales.filter(s => isWithinInterval(new Date(s.created_at), todayInterval));
+    const yesterdaySales = sales.filter(s => isWithinInterval(new Date(s.created_at), yesterdayInterval));
+
+    const todayRevenue = todaySales.reduce((acc, s) => acc + s.total_amount, 0);
+    const todayProfit = todaySales.reduce((acc, s) => acc + (s.total_profit || 0), 0);
+    
+    const yesterdayRevenue = yesterdaySales.reduce((acc, s) => acc + s.total_amount, 0);
+    const yesterdayProfit = yesterdaySales.reduce((acc, s) => acc + (s.total_profit || 0), 0);
+
+    let profitGrowth = 0;
+    if (yesterdayProfit > 0) {
+      profitGrowth = ((todayProfit - yesterdayProfit) / yesterdayProfit) * 100;
+    } else if (yesterdayProfit === 0 && todayProfit > 0) {
+      profitGrowth = 100;
+    }
+
+    // 2. Top Drivers (Today's Sale Items)
+    const todaySaleItems = saleItems.filter(item => {
+      const sale = todaySales.find(s => s.id === item.sale_id);
+      return !!sale;
+    });
+
+    const productStats: Record<string, { name: string, qty: number, profit: number }> = {};
+    todaySaleItems.forEach(item => {
+      if (!productStats[item.product_id]) {
+        productStats[item.product_id] = { name: item.product_name, qty: 0, profit: 0 };
+      }
+      productStats[item.product_id].qty += item.qty;
+      productStats[item.product_id].profit += (item.sell_price - item.buy_price) * item.qty;
+    });
+
+    const topDrivers = Object.values(productStats)
+      .sort((a, b) => b.profit - a.profit)
+      .slice(0, 3);
+
+    // 3. Alerts (Tahadhari)
+    const refundsToday = auditLogs.filter(log => 
+      log.action === 'refund_sale' && isWithinInterval(new Date(log.created_at), todayInterval)
+    ).length;
+
+    const creditAlerts: { name: string, count: number }[] = [];
+    const creditSalesByUser: Record<string, number> = {};
+    todaySales.forEach(s => {
+      if (s.payment_method === 'credit') {
+        creditSalesByUser[s.user_id] = (creditSalesByUser[s.user_id] || 0) + 1;
+      }
+    });
+    
+    Object.entries(creditSalesByUser).forEach(([userId, count]) => {
+      if (count >= 3) { // Alert if 3 or more credit sales given by a single user today
+        const u = users.find(u => u.id === userId);
+        creditAlerts.push({ name: u?.name || 'Mfanyakazi', count });
+      }
+    });
+
+    const lossProductsAlerts: { id: string, name: string, buyPrice: number, sellPrice: number, loss: number }[] = [];
+    const implausibleProductsAlerts: { id: string, name: string, buyPrice: number, sellPrice: number, ratio: number }[] = [];
+    products.forEach(p => {
+      if (p.pricing_verified === 1) return;
+      if (p.buy_price > 0) {
+        if (p.sell_price <= p.buy_price) {
+          lossProductsAlerts.push({
+            id: p.id,
+            name: p.name,
+            buyPrice: p.buy_price,
+            sellPrice: p.sell_price,
+            loss: p.buy_price - p.sell_price
+          });
+        } else {
+          const ratio = p.sell_price / p.buy_price;
+          if (ratio > 5) {
+            implausibleProductsAlerts.push({
+              id: p.id,
+              name: p.name,
+              buyPrice: p.buy_price,
+              sellPrice: p.sell_price,
+              ratio
+            });
+          }
+        }
+      }
+    });
+
+    // 4. Opportunities (Fursa)
+    const opportunities: string[] = [];
+    
+    // Fast movers running low
+    Object.entries(productStats).forEach(([productId, stats]) => {
+      const product = products.find(p => p.id === productId);
+      if (product && stats.qty > 0 && product.stock <= (product.min_stock + 5)) {
+        opportunities.push(`🔥 ${product.name} inauzwa haraka sana, stock iliyobaki ni ${product.stock} tu. Ongeza haraka ili usikose mauzo!`);
+      }
+    });
+
+    // High margin, slow movers
+    const highMarginProducts = products.filter(p => {
+      if (p.buy_price === 0) return false;
+      const margin = (p.sell_price - p.buy_price) / p.buy_price;
+      return margin > 0.4; // 40% margin
+    });
+
+    const slowHighMargin = highMarginProducts.filter(p => !productStats[p.id!]).slice(0, 2);
+    slowHighMargin.forEach(p => {
+      opportunities.push(`💡 Fikiria kufanya promotion kwa ${p.name}. Ina faida kubwa lakini haijauzwa leo.`);
+    });
+
+    // 5. Employee Summary
+    const employeeActivity: { id: string, name: string, role: string, revenue: number, percentage: number, loginTime?: string, logoutTime?: string, openTime?: string }[] = [];
+    const revenueByUser: Record<string, number> = {};
+    
+    todaySales.forEach(s => {
+      revenueByUser[s.user_id] = (revenueByUser[s.user_id] || 0) + s.total_amount;
+    });
+
+    users.forEach(u => {
+      if ((u.role as string) === 'admin' || u.role === 'boss') return; // Only show employees
+      const rev = revenueByUser[u.id] || 0;
+      const percentage = todayRevenue > 0 ? Math.round((rev / todayRevenue) * 100) : 0;
+      
+      const userLogs = auditLogs.filter(log => log.user_id === u.id && isWithinInterval(new Date(log.created_at), todayInterval));
+      
+      // Get the earliest login today
+      const loginLog = userLogs.filter(l => l.action === 'login').sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+      
+      // Get the latest logout today
+      const logoutLog = userLogs.filter(l => l.action === 'logout').sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+      
+      // Get the earliest app opened today
+      const appOpenedLog = userLogs.filter(l => l.action === 'app_opened').sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())[0];
+
+      employeeActivity.push({ 
+        id: u.id,
+        name: u.name, 
+        role: u.role,
+        revenue: rev, 
+        percentage,
+        loginTime: loginLog ? format(new Date(loginLog.created_at), 'h:mm a') : undefined,
+        logoutTime: logoutLog ? format(new Date(logoutLog.created_at), 'h:mm a') : undefined,
+        openTime: appOpenedLog ? format(new Date(appOpenedLog.created_at), 'h:mm a') : undefined
+      });
+    });
+
+    employeeActivity.sort((a, b) => b.revenue - a.revenue);
+
+    return {
+      todayRevenue,
+      todayProfit,
+      profitGrowth,
+      topDrivers,
+      refundsToday,
+      discountAlerts: creditAlerts,
+      lossProductsAlerts,
+      implausibleProductsAlerts,
+      opportunities,
+      employeeActivity
+    };
+  }, [sales, products, saleItems, auditLogs, users]);
 
   if (user?.role !== 'boss') {
     return (
@@ -446,250 +440,226 @@ export default function ExecutiveDashboard() {
     return <EmployeeReports onClose={() => setShowEmployeeReports(false)} />;
   }
 
-  const { pulse, capabilities } = intel;
+  const renderGreeting = () => {
+    if (insights.profitGrowth > 0) {
+      return (
+        <div className="bg-green-50 border border-green-100 p-5 rounded-3xl mb-6">
+          <h2 className="text-xl font-black text-green-800 mb-2 flex items-center">
+            Hongera! 🎉 <TrendingUp className="w-6 h-6 ml-2" />
+          </h2>
+          <p className="text-green-700 font-medium leading-relaxed">
+            Leo umefanya vizuri sana 📈<br/>
+            Faida imeongezeka kwa <strong className="text-green-900 text-lg">+{insights.profitGrowth.toFixed(1)}%</strong> kutoka jana.<br/>
+            Endelea hivyo! 🔥
+          </p>
+        </div>
+      );
+    } else if (insights.profitGrowth < 0) {
+      return (
+        <div className="bg-orange-50 border border-orange-100 p-5 rounded-3xl mb-6">
+          <h2 className="text-xl font-black text-orange-800 mb-2 flex items-center">
+            Ongeza Juhudi! 💪 <TrendingDown className="w-6 h-6 ml-2" />
+          </h2>
+          <p className="text-orange-700 font-medium leading-relaxed">
+            Leo mauzo yameshuka kidogo 📉<br/>
+            Faida: <strong className="text-orange-900 text-lg">Tsh {insights.todayProfit.toLocaleString()}</strong><br/>
+            (<span className="text-red-600">{insights.profitGrowth.toFixed(1)}%</span> kutoka jana).
+          </p>
+        </div>
+      );
+    } else {
+      return (
+        <div className="bg-blue-50 border border-blue-100 p-5 rounded-3xl mb-6">
+          <h2 className="text-xl font-black text-blue-800 mb-2 flex items-center">
+            Siku Inaendelea ⚖️ <Zap className="w-6 h-6 ml-2" />
+          </h2>
+          <p className="text-blue-700 font-medium leading-relaxed">
+            Mauzo yako yapo sawa na jana au bado hujaanza kuuza sana leo.<br/>
+            Faida: <strong className="text-blue-900 text-lg">Tsh {insights.todayProfit.toLocaleString()}</strong><br/>
+            Fikiria mbinu mpya za kuvutia wateja leo! 🎯
+          </p>
+        </div>
+      );
+    }
+  };
 
   return (
-    <div className="p-4 space-y-5 pb-28 max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">V Smart</h1>
-        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">
-          Duka lako linakuambia nini leo
-        </p>
+    <div className="p-4 space-y-6 pb-24 max-w-2xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center mb-2">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Ripoti ya Bosi</h1>
+          <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Hali ya Biashara Leo</p>
+        </div>
       </div>
 
-      {/* Placed high on the boss's landing page: they read far more than they
-          write, so without this the lock can go unnoticed for a whole session. */}
-      <ReadOnlyNotice />
+      {renderGreeting()}
 
-      {/* Mode switch — one shop moves between these as its own numbers change */}
-      <div className="flex gap-2 bg-gray-100 p-1.5 rounded-[1.5rem]">
-        {(Object.keys(MODE_META) as Mode[]).map((m) => {
-          const meta = MODE_META[m];
-          const Icon = meta.icon;
-          const badge = m === 'risk' ? intel.leaks.filter((l) => l.tone !== 'info').length
-                      : m === 'growth' ? intel.opportunities.length
-                      : pulse.transactions;
-          const active = mode === m;
-          return (
-            <button
-              key={m}
-              onClick={tap(() => setManualMode(m))}
-              onPointerUp={tap(() => setManualMode(m))}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-[1.15rem] font-black text-[12.5px] cursor-pointer transition-all ${
-                active ? 'bg-white shadow-sm ' + meta.accent : 'text-gray-500'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {meta.label}
-              {badge > 0 && (
-                <span className={`text-[9px] text-white px-1.5 py-0.5 rounded-full ${active ? meta.ring : 'bg-gray-400'}`}>
-                  {badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* The page explains why it opened where it did */}
-      {!manualMode && (
-        <div className="flex items-start gap-2 bg-blue-50/60 border border-blue-100 px-4 py-3 rounded-2xl">
-          <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-          <p className="text-[12.5px] text-blue-900 font-medium leading-relaxed">{intel.reason}</p>
-        </div>
-      )}
-
-      {/* ===================== PULSE ===================== */}
-      {mode === 'pulse' && (
-        <div className="space-y-5">
-          <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100">
-            <GoalRing
-              revenue={pulse.revenue} goal={pulse.goal} pct={pulse.goalPct}
-              currency={currency} magnified={magnified}
-              onEdit={() => { setGoalDraft(String(pulse.goal)); setEditingGoal(true); }}
-            />
-
-            <div className={`mt-5 pt-5 border-t border-gray-100 grid ${magnified ? 'grid-cols-1 gap-3' : 'grid-cols-3 gap-2'}`}>
-              <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Faida</p>
-                <p className="font-black text-gray-900 mt-0.5">{pulse.profit.toLocaleString()}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Miamala</p>
-                <p className="font-black text-gray-900 mt-0.5">{pulse.transactions}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Kasi</p>
-                <p className={`font-black mt-0.5 ${
-                  pulse.paceDelta === null ? 'text-gray-400'
-                    : pulse.paceDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'
-                }`}>
-                  {pulse.paceDelta === null ? '—' : `${pulse.paceDelta >= 0 ? '+' : ''}${Math.round(pulse.paceDelta)}%`}
-                </p>
-              </div>
-            </div>
-
-            {pulse.paceDelta !== null && (
-              <p className="text-[11.5px] text-gray-500 text-center mt-3 leading-relaxed">
-                Saa hii kwa kawaida ulikuwa umefikia{' '}
-                <b className="text-gray-700">{formatCurrency(pulse.typicalByNow, currency)}</b>.
-              </p>
-            )}
-          </div>
-
-          <TrendStrip trend={intel.weekTrend} streak={intel.streak} magnified={magnified} />
-
-
-          {pulse.movers.length > 0 && (
-            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">
-                Zinazoongoza leo
-              </h3>
-              <ul className="space-y-2.5">
-                {pulse.movers.map((m, i) => (
-                  <li key={i} className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-bold text-gray-800 truncate">{m.name}</span>
-                    <span className="text-xs text-gray-500 shrink-0">
-                      {m.qty} • faida {m.profit.toLocaleString()}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {capabilities.staff && (
-            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 mb-3">
-                <Users className="w-4 h-4 text-blue-500" /> Timu leo
-              </h3>
-              {pulse.sellers.length > 0 ? (
-                <ul className="space-y-2.5 mb-3">
-                  {pulse.sellers.slice(0, 4).map((s) => (
-                    <li key={s.id}>
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span className="font-bold text-gray-800 truncate">{s.name}</span>
-                        <span className="text-gray-500 shrink-0">{s.revenue.toLocaleString()} • {s.pct}%</span>
-                      </div>
-                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }} animate={{ width: `${s.pct}%` }}
-                          className="h-full bg-blue-500 rounded-full"
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-400">Bado hakuna aliyeuza leo.</p>
-              )}
-              {/* No button here — the familiar "Tazama Ripoti za Wafanyakazi"
-                  entry point lives at the bottom of the page, in every mode. */}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ===================== RISK ===================== */}
-      {mode === 'risk' && (
-        <div className="space-y-4">
-          <div className="bg-rose-600 text-white p-6 rounded-[2rem] shadow-sm">
-            <p className="text-[11px] font-black uppercase tracking-widest text-rose-100">
-              Jumla iliyo hatarini
-            </p>
-            <p className="text-3xl font-black mt-1">{formatCurrency(intel.totalAtRisk, currency)}</p>
-            <p className="text-[12.5px] text-rose-100 mt-2 leading-relaxed">
-              {intel.avgDailyRevenue > 0
-                ? `Sawa na mauzo ya siku ${(intel.totalAtRisk / intel.avgDailyRevenue).toFixed(1)} kwa kasi yako ya sasa.`
-                : 'Kagua vipengele hapa chini kuzuia upotevu.'}
-            </p>
-          </div>
-
-          {intel.leaks.length === 0 ? (
-            <div className="bg-emerald-50 border border-emerald-100 p-6 rounded-[2rem] text-center">
-              <Check className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
-              <p className="font-black text-emerald-900">Hakuna uvujaji uliobainika</p>
-              <p className="text-sm text-emerald-700 mt-1">Bei, madeni na mzigo wako vipo sawa kwa sasa.</p>
-            </div>
-          ) : (
-            intel.leaks.map((card) => (
-              <div key={card.id}>
-                <CardView card={card} currency={currency} onAct={act} magnified={magnified} />
-                {card.id === 'loss_pricing' && (
-                  <button
-                    onClick={tap(verifyAllPricing)}
-                    onPointerUp={tap(verifyAllPricing)}
-                    className="mt-2 w-full bg-white border border-rose-200 text-rose-800 font-bold text-xs py-2.5 rounded-2xl flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <Check className="w-3.5 h-3.5" /> Bei zote zipo sawa
-                  </button>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* ===================== GROWTH ===================== */}
-      {mode === 'growth' && (
-        <div className="space-y-4">
-          <div className="bg-emerald-600 text-white p-6 rounded-[2rem] shadow-sm">
-            <p className="text-[11px] font-black uppercase tracking-widest text-emerald-100">
-              Nafasi ya kuongeza
-            </p>
-            <p className="text-3xl font-black mt-1">{formatCurrency(intel.totalUpside, currency)}</p>
-            <p className="text-[12.5px] text-emerald-100 mt-2 leading-relaxed">
-              Makadirio ya faida ya ziada ukichukua hatua zilizo hapa chini.
-            </p>
-          </div>
-
-          {intel.opportunities.length === 0 ? (
-            <div className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] text-center">
-              <Target className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-              <p className="font-black text-slate-800">Bado sina takwimu za kutosha</p>
-              <p className="text-sm text-slate-600 mt-1">
-                Endelea kuuza na kurekodi — nitaanza kukuonyesha pa kuongeza faida.
-              </p>
-            </div>
-          ) : (
-            intel.opportunities.map((card) => (
-              <CardView key={card.id} card={card} currency={currency} onAct={act} magnified={magnified} />
-            ))
-          )}
-        </div>
-      )}
-
-      {/* ============================================================
-          The three familiar entry points, unchanged and always present.
-          They sit below every mode so the modes never move a control the
-          shop owner already knows how to find.
-          ============================================================ */}
-
-      <motion.div
+      {/* Summary */}
+      <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100"
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center">
-            <Users className="w-5 h-5 mr-2 text-blue-500" /> Wafanyakazi
-          </h3>
-        </div>
-        <button
-          onClick={tap(() => setShowEmployeeReports(true))}
-          onPointerUp={tap(() => setShowEmployeeReports(true))}
-          className="w-full bg-blue-50 text-blue-700 font-bold py-4 rounded-2xl flex items-center justify-center transition-colors cursor-pointer"
-        >
-          Tazama Ripoti za Wafanyakazi (Zamu)
-          <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
-        </button>
+        <p className="text-gray-800 font-medium leading-relaxed mb-4">
+          Leo biashara yako imeingiza <strong className="text-gray-900">Tsh {insights.todayRevenue.toLocaleString()}</strong>, 
+          na faida ya <strong className="text-blue-600">Tsh {insights.todayProfit.toLocaleString()}</strong> 📈
+        </p>
+
+        {insights.topDrivers.length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3 flex items-center">
+              <Star className="w-4 h-4 mr-2 text-yellow-500" /> Mauzo makubwa yalitokana na:
+            </h3>
+            <ul className="space-y-3">
+              {insights.topDrivers.map((item, idx) => (
+                <li key={idx} className="flex items-start">
+                  <span className="text-blue-500 mr-2">🔹</span>
+                  <span className="text-gray-700 text-sm">
+                    <strong>{item.name}</strong>: {item.qty} units, faida ya Tsh {item.profit.toLocaleString()}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+      {/* Alerts */}
+      {(insights.refundsToday > 0 || insights.discountAlerts.length > 0 || insights.lossProductsAlerts.length > 0 || insights.implausibleProductsAlerts.length > 0) && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-red-50 p-6 rounded-[2rem] border border-red-100 space-y-4"
+        >
+          <div className="flex justify-between items-center flex-wrap gap-2 mb-1">
+            <h3 className="text-sm font-black text-red-800 uppercase tracking-widest flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2 animate-bounce" /> Tahadhari za Duka
+            </h3>
+            {(insights.lossProductsAlerts.length > 0 || insights.implausibleProductsAlerts.length > 0) && (
+              <button
+                onClick={tap(() => handleVerifyAllProductPricing())}
+                onPointerUp={tap(() => handleVerifyAllProductPricing())}
+                className="bg-red-200 text-red-950 px-4 py-2 rounded-2xl text-xs font-black hover:bg-red-300 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+                title="Sema bei zote za bidhaa zilizoorodheshwa zipo sawa"
+              >
+                <Check className="w-3.5 h-3.5" /> Zote Zipo Sawa
+              </button>
+            )}
+          </div>
+          <ul className="space-y-3.5">
+            {insights.refundsToday > 0 && (
+              <li className="flex items-start">
+                <span className="text-red-500 mr-2">⚠️</span>
+                <span className="text-red-900 text-sm font-medium">
+                  Refunds (Rudisha Mauzo) <strong>{insights.refundsToday}</strong> zimefanyika leo.
+                </span>
+              </li>
+            )}
+            {insights.discountAlerts.map((alert, idx) => (
+              <li key={idx} className="flex items-start">
+                <span className="text-red-500 mr-2">🛑</span>
+                <span className="text-red-900 text-sm font-medium">
+                  Mfanyakazi <strong>{alert.name}</strong> amefanya mauzo ya mkopo (credit) mara {alert.count} leo. Fuatilia madeni.
+                </span>
+              </li>
+            ))}
+            
+            {insights.lossProductsAlerts.map((alert, idx) => (
+              <li key={`loss-${idx}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-red-100/50 rounded-2xl">
+                <div className="flex items-start">
+                  <span className="text-red-600 mr-2 mt-0.5">⚠️</span>
+                  <span className="text-red-900 text-sm font-semibold">
+                    Hasara Inayoweza Kuepukika: Bidhaa <span className="text-red-700">[{alert.name}]</span> inauzwa kwa TZS {alert.sellPrice.toLocaleString()} wakati ilinunuliwa kwa TZS {alert.buyPrice.toLocaleString()}. Kila mauzo yataleta hasara ya TZS {alert.loss.toLocaleString()}.
+                  </span>
+                </div>
+                <button
+                  onClick={tap(() => handleVerifyProductPricing(alert.id))}
+                  onPointerUp={tap(() => handleVerifyProductPricing(alert.id))}
+                  className="shrink-0 bg-red-200 text-red-900 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-red-300 active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" /> Bei ipo Sawa
+                </button>
+              </li>
+            ))}
+
+            {insights.implausibleProductsAlerts.map((alert, idx) => (
+              <li key={`imp-${idx}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-amber-100/40 rounded-2xl">
+                <div className="flex items-start">
+                  <span className="text-amber-600 mr-2 mt-0.5">🛑</span>
+                  <span className="text-amber-900 text-sm font-medium">
+                    Uhakiki wa Bei: Bidhaa <span className="text-amber-850">[{alert.name}]</span> ina bei ya kununulia TZS {alert.buyPrice.toLocaleString()} na kuuza TZS {alert.sellPrice.toLocaleString()}. Uwiano wa bei hii haueleweki (zaidi ya mara {Math.round(alert.ratio)} ya bei ya kununulia).
+                  </span>
+                </div>
+                <button
+                  onClick={tap(() => handleVerifyProductPricing(alert.id))}
+                  onPointerUp={tap(() => handleVerifyProductPricing(alert.id))}
+                  className="shrink-0 bg-amber-200 text-amber-905 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-amber-300 active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" /> Bei ipo Sawa
+                </button>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      )}
+
+      {/* Opportunities */}
+      {insights.opportunities.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-yellow-50 p-6 rounded-[2rem] border border-yellow-100"
+        >
+          <h3 className="text-sm font-black text-yellow-800 uppercase tracking-widest mb-3 flex items-center">
+            <Lightbulb className="w-5 h-5 mr-2" /> Fursa
+          </h3>
+          <ul className="space-y-4">
+            {insights.opportunities.map((opp, idx) => (
+              <li key={idx} className="text-yellow-900 text-sm font-medium leading-relaxed">
+                {opp}
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      )}
+
+      {/* Employee Summary Button */}
+      {insights.employeeActivity.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center">
+              <Users className="w-5 h-5 mr-2 text-blue-500" /> Wafanyakazi
+            </h3>
+          </div>
+          <button
+            onClick={tap(() => setShowEmployeeReports(true))}
+            onPointerUp={tap(() => setShowEmployeeReports(true))}
+            className="w-full bg-blue-50 text-blue-700 font-bold py-4 rounded-2xl flex items-center justify-center transition-colors"
+          >
+            Tazama Ripoti za Wafanyakazi (Zamu)
+            <ArrowLeft className="w-4 h-4 ml-2 rotate-180" />
+          </button>
+        </motion.div>
+      )}
+
+      {/* Quick Links */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
         <button
-          onClick={tap(() => navigate('/audit-logs', { state: { spotlight: 'audit-list' } }))}
-          onPointerUp={tap(() => navigate('/audit-logs', { state: { spotlight: 'audit-list' } }))}
-          className="w-full bg-blue-600 text-white p-5 rounded-[2rem] shadow-sm flex items-center justify-between transition-colors cursor-pointer"
+          onClick={tap(() => navigate('/audit-logs'))}
+          onPointerUp={tap(() => navigate('/audit-logs'))}
+          className="w-full bg-blue-600 text-white p-5 rounded-[2rem] shadow-sm flex items-center justify-between transition-colors"
         >
           <div className="flex items-center">
             <div className="bg-blue-500/30 p-2 rounded-full mr-4">
@@ -704,53 +674,20 @@ export default function ExecutiveDashboard() {
         </button>
       </motion.div>
 
-      {shopId && <PaymentBreakdownWidget shopId={shopId} />}
+      {/* Payment Breakdown */}
+      {user?.shopId && <PaymentBreakdownWidget shopId={user.shopId} />}
 
-      <div className="text-center pt-4 pb-2 border-t border-gray-100">
-        <p className="text-lg font-bold text-blue-600">Venics Sales</p>
-        <p className="text-[10px] text-gray-300 mt-1">Made by Venics Software Company</p>
-      </div>
-
-      {editingGoal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
-          <motion.div
-            initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-            className="bg-white w-full max-w-sm rounded-[2rem] p-6 space-y-4"
-          >
-            <div>
-              <h2 className="text-lg font-black text-gray-900">Lengo la mauzo ya siku</h2>
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                Nimependekeza {suggestGoal(intel.weekTrend.map((d) => d.revenue)).toLocaleString()} kutokana na
-                wastani wa siku 7 zilizopita. Lengo linahifadhiwa kwenye kifaa hiki pekee.
-              </p>
-            </div>
-
-            <input
-              type="number" inputMode="numeric" value={goalDraft}
-              onChange={(e) => setGoalDraft(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-lg font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-
-            <div className="flex gap-2">
-              <button
-                onClick={tap(() => setEditingGoal(false))}
-                onPointerUp={tap(() => setEditingGoal(false))}
-                className="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-2xl cursor-pointer"
-              >
-                Ghairi
-              </button>
-              <button
-                onClick={tap(saveGoal)}
-                onPointerUp={tap(saveGoal)}
-                className="flex-1 bg-blue-600 text-white font-bold py-3 rounded-2xl cursor-pointer"
-              >
-                Hifadhi
-              </button>
-            </div>
-          </motion.div>
+      {/* Footer Message */}
+      <div className="text-center pt-6 pb-4">
+        <p className="text-sm text-gray-500 font-medium italic mb-6">
+          "Endelea kuangalia biashara yako kila siku ili kuchukua hatua za haraka na kukuza faida. 🔥"
+        </p>
+        <div className="text-center py-4 border-t border-gray-100">
+          <p className="text-lg font-bold text-blue-600">Venics Sales</p>
+          <p className="text-xs text-gray-400 mt-1">Version 1.0.0</p>
+          <p className="text-[10px] text-gray-300 mt-4">Made by Venics Software Company</p>
         </div>
-      )}
-
+      </div>
       <MshauriChat />
     </div>
   );
