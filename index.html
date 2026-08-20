@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="sw">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Venics Sales</title>
+    <style>
+      /* Critical splash styles — inlined so the very first paint is already branded
+         (no white flash), and self-removed the instant React renders into #root. */
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background: #0f172a; }
+      #root { min-height: 100vh; min-height: 100dvh; }
+
+      .vx-splash {
+        position: fixed; inset: 0; z-index: 2147483647;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        background: radial-gradient(130% 100% at 50% -10%, #1e293b 0%, #0f172a 55%, #0b1020 100%);
+        color: #f8fafc; overflow: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
+      }
+      /* Soft drifting aurora glows — pure radial gradients (no filter:blur) for cheap GPU compositing */
+      .vx-glow { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; will-change: transform, opacity; }
+      .vx-glow-a {
+        width: 420px; height: 420px; top: 8%; left: 50%;
+        background: radial-gradient(circle, rgba(59,130,246,0.22) 0%, rgba(15,23,42,0) 70%);
+        transform: translate(-50%, -30%); animation: vx-float-a 9s ease-in-out infinite;
+      }
+      .vx-glow-b {
+        width: 360px; height: 360px; bottom: 6%; left: 50%;
+        background: radial-gradient(circle, rgba(6,182,212,0.16) 0%, rgba(15,23,42,0) 70%);
+        transform: translate(-50%, 25%); animation: vx-float-b 11s ease-in-out infinite;
+      }
+
+      .vx-stage {
+        position: relative; z-index: 1;
+        display: flex; flex-direction: column; align-items: center;
+        animation: vx-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .vx-logo { margin-bottom: 1.5rem; filter: drop-shadow(0 6px 18px rgba(59,130,246,0.35)); }
+      .vx-ring-cw  { transform-origin: 50px 50px; animation: vx-spin-cw 3s linear infinite; }
+      .vx-ring-ccw { transform-origin: 50px 50px; animation: vx-spin-ccw 2.2s linear infinite; }
+      .vx-v        { animation: vx-vpulse 2.5s ease-in-out infinite; transform-origin: 50px 50px; filter: drop-shadow(0 0 2.5px rgba(34,211,238,0.9)) drop-shadow(0 0 7px rgba(59,130,246,0.6)); }
+
+      .vx-name {
+        font-size: 1.6rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 0.3rem;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent; color: transparent;
+      }
+      .vx-sub {
+        font-size: 0.75rem; font-weight: 600; color: #94a3b8;
+        letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 2rem;
+      }
+
+      .vx-bar {
+        position: relative; width: 200px; max-width: 62vw; height: 4px;
+        border-radius: 999px; background: rgba(148,163,184,0.16); overflow: hidden;
+      }
+      .vx-bar-fill {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 6%; border-radius: 999px;
+        background: linear-gradient(90deg, #3b82f6 0%, #06b6d4 100%);
+        box-shadow: 0 0 14px rgba(59,130,246,0.55);
+        animation: vx-fill 12s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
+      }
+      .vx-bar-fill::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+        transform: translateX(-100%); animation: vx-shimmer 1.5s ease-in-out infinite;
+      }
+
+      .vx-msg {
+        margin-top: 1.1rem; height: 1.1rem; font-size: 0.82rem; font-weight: 500;
+        color: #cbd5e1; letter-spacing: 0.01em; transition: opacity 0.25s ease;
+      }
+
+      @keyframes vx-spin-cw  { to { transform: rotate(360deg); } }
+      @keyframes vx-spin-ccw { to { transform: rotate(-360deg); } }
+      @keyframes vx-vpulse   { 0%,100% { opacity: 0.9; } 50% { opacity: 1; } }
+      @keyframes vx-rise     { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+      @keyframes vx-fill     { 0% { width: 6%; } 55% { width: 68%; } 100% { width: 92%; } }
+      @keyframes vx-shimmer  { 0% { transform: translateX(-100%); } 100% { transform: translateX(240%); } }
+      @keyframes vx-float-a  { 0%,100% { transform: translate(-50%, -30%); } 50% { transform: translate(-42%, -22%); } }
+      @keyframes vx-float-b  { 0%,100% { transform: translate(-50%, 25%); } 50% { transform: translate(-58%, 18%); } }
+
+      @media (prefers-reduced-motion: reduce) {
+        .vx-ring-cw, .vx-ring-ccw, .vx-v, .vx-glow-a, .vx-glow-b,
+        .vx-bar-fill, .vx-bar-fill::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; }
+        .vx-bar-fill { width: 55%; }
+      }
+    </style>
+    <script>
+      /* ------------------------------------------------------------------
+         Browser support gate.
+
+         Deliberately ES5 and inline: on a WebView too old to parse the app
+         bundle, this is the ONLY code that still runs. Anything placed in the
+         module bundle is already too late.
+
+         In the APK this is really a Chrome check. Capacitor renders inside the
+         Android System WebView, which on Android 7-9 IS Google Chrome and on
+         Android 10+ shares its Chromium build — so an old Chrome means an old
+         engine, and updating Chrome fixes it. That is why the check offers the
+         Play Store rather than just apologising.
+
+         Feature tests rather than version sniffing, because the two floors are
+         what actually matter:
+           - oklch() / color-mix()  -> Tailwind v4 needs these (Chrome 111+)
+           - Object.hasOwn          -> used by the app bundle (Chrome 93+)
+         Anything failing these renders either a dead or a badly broken app.
+         ------------------------------------------------------------------ */
+      (function() {
+        function supportsCss(prop, value) {
+          try {
+            return !!(window.CSS && window.CSS.supports && window.CSS.supports(prop, value));
+          } catch (e) {
+            return false;
+          }
+        }
+
+        /* The JavaScript floor: the bundle calls Object.hasOwn (Chrome 93 /
+           Safari 15.4). Below this nothing runs at all. */
+        function jsOk() {
+          try {
+            return typeof Object.hasOwn === 'function';
+          } catch (e) {
+            return false;
+          }
+        }
+
+        /* The CSS floor: Tailwind v4 builds every colour and shadow out of
+           oklch(), color-mix() and @property (Chrome 111 / Safari 16.4). Below
+           this the app RUNS but renders badly distorted. */
+        function cssOk() {
+          return supportsCss('color', 'oklch(0% 0 0)')
+              && supportsCss('color', 'color-mix(in srgb, red 50%, blue)');
+        }
+
+        function isSupported() {
+          return jsOk() && cssOk();
+        }
+
+        function chromeVersion() {
+          var m = /Chrom(?:e|ium)\/(\d+)/.exec(navigator.userAgent || '');
+          return m ? parseInt(m[1], 10) : 0;
+        }
+
+        function iosVersion() {
+          var m = /OS (\d+)[_.](\d+)/.exec(navigator.userAgent || '');
+          return m ? m[1] + '.' + m[2] : '';
+        }
+
+        function platform() {
+          var ua = navigator.userAgent || '';
+          // iPadOS 13+ reports itself as Macintosh; touch points are what
+          // separate it from a real Mac.
+          if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+          if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return 'ios';
+          if (/Android/.test(ua)) return 'android';
+          return 'other';
+        }
+
+        /* Chrome's Play Store page.
+           A plain https link rather than script navigation or a market:// URL:
+           Play Store registers an intent filter for this exact address, so
+           Android hands it to the Play app directly, and Capacitor sends
+           off-origin links to the system browser rather than trying to load them
+           in the WebView. It also degrades correctly on a phone with no Play
+           Store app, where market:// would simply fail. */
+        var CHROME_STORE_URL = 'https://play.google.com/store/apps/details?id=com.android.chrome';
+
+        /* Three different remedies, because the platforms genuinely differ:
+             android  the engine is Chrome, updatable from Play in one tap
+             ios      the engine is WKWebView, welded to the iOS version — the
+                      ONLY lever is Settings, and there is no App Store page to
+                      send them to. Note every browser on iOS is WKWebView, so
+                      "install Chrome" would change nothing there.
+             other    a desktop browser; just name the fix. */
+        function copyFor(p) {
+          if (p === 'ios') {
+            var v = iosVersion();
+            return {
+              icon: '📱',
+              title: 'Tafadhali sasisha iPhone yako',
+              body: 'Venics Sales inahitaji iOS 16.4 au zaidi ili ionekane vizuri. '
+                  + 'iPhone hii ina toleo la zamani, ndiyo maana maandishi na rangi zinaharibika.',
+              steps: 'Fungua <b>Settings</b> &rarr; <b>General</b> &rarr; <b>Software Update</b>, '
+                   + 'kisha bonyeza <b>Download and Install</b>. Ukimaliza, fungua Venics Sales tena.',
+              link: null,
+              version: v ? 'iOS ' + v : ''
+            };
+          }
+          if (p === 'android') {
+            var c = chromeVersion();
+            return {
+              icon: '🔄',
+              title: 'Tafadhali sasisha Chrome',
+              body: 'Venics Sales inahitaji toleo jipya la Chrome ili ifanye kazi. '
+                  + 'Chrome iliyopo kwenye simu hii ni ya zamani mno.',
+              steps: 'Bonyeza kitufe hapa chini, kisha bonyeza <b>Update</b> kwenye Play Store. '
+                   + 'Ukimaliza, fungua Venics Sales tena.',
+              link: { label: 'Sasisha Chrome Sasa', href: CHROME_STORE_URL },
+              version: c ? 'Chrome ' + c : ''
+            };
+          }
+          return {
+            icon: '🌐',
+            title: 'Kivinjari chako ni cha zamani',
+            body: 'Venics Sales inahitaji kivinjari kipya ili ifanye kazi vizuri.',
+            steps: 'Tafadhali sasisha Chrome, Edge au Firefox, kisha fungua Venics Sales tena.',
+            link: null,
+            version: ''
+          };
+        }
+
+        function showUnsupported() {
+          var root = document.getElementById('root');
+          if (!root) return;
+
+          var c = copyFor(platform());
+          // Offered ONLY when the app can actually still run — i.e. the JS floor
+          // is met and it is just the styling that breaks. Below the JS floor
+          // "continue" would hand them the dark screen this gate exists to
+          // replace. It matters for iPhones capped at iOS 15 (6s, 7, SE 1st gen),
+          // which have no update available at all: a distorted till still beats
+          // no till.
+          var canContinue = jsOk();
+
+          /* Styled from scratch here rather than reusing .vx-splash, which is
+             what makes this screen unreadable on the very phones it exists for:
+             that class positions itself with `inset: 0` (Safari 14.1+), and an
+             engine that does not understand it drops the line, leaving a fixed
+             box with no edges that shrinks to its content in the TOP-LEFT
+             CORNER — and `overflow: hidden` then puts the rest out of reach.
+
+             So: explicit top/right/bottom/left AND width/height, `overflow-y:
+             auto` so the text is always reachable however small the box ends up,
+             and top-aligned instead of flex-centred, because centring can push
+             the first line above the fold with no way to scroll back to it.
+             Nothing here is newer than about 2013. */
+          var SHELL = 'position:fixed;top:0;right:0;bottom:0;left:0;width:100%;height:100%;'
+                    + 'overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:2147483647;'
+                    + 'margin:0;padding:32px 20px 48px;box-sizing:border-box;'
+                    + 'background:#0f172a;color:#f8fafc;text-align:center;'
+                    + '-webkit-text-size-adjust:100%;'
+                    + "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+          root.innerHTML =
+            '<div style="' + SHELL + '">' +
+            '<div style="max-width:340px;margin:0 auto">' +
+              '<div style="font-size:52px;line-height:1;margin-bottom:18px">' + c.icon + '</div>' +
+              '<h1 style="margin:0 0 12px;font-size:21px;font-weight:800;line-height:1.3">' + c.title + '</h1>' +
+              '<p style="margin:0 0 8px;font-size:14px;line-height:1.65;color:#cbd5e1">' + c.body + '</p>' +
+              '<p style="margin:0 0 22px;font-size:13px;line-height:1.65;color:#94a3b8">' + c.steps + '</p>' +
+              (c.link
+                ? '<a id="vx-update" href="' + c.link.href + '" rel="noopener" '
+                    + 'style="display:block;text-decoration:none;background:#22c55e;color:#fff;'
+                    + 'border-radius:16px;padding:16px 20px;font-size:16px;font-weight:800;box-sizing:border-box">'
+                    + c.link.label +
+                  '</a>'
+                : '') +
+              (canContinue
+                ? '<button id="vx-continue" type="button" style="display:block;width:100%;margin:16px 0 0;'
+                    + 'background:transparent;color:#94a3b8;border:1px solid #334155;border-radius:14px;'
+                    + 'padding:12px 20px;font-size:13px;font-weight:700;box-sizing:border-box">'
+                    + 'Endelea hivyo hivyo' +
+                  '</button>'
+                : '') +
+              '<p style="margin:26px 0 0;font-size:11px;line-height:1.6;color:#64748b">' +
+                'Ukihitaji msaada piga simu 0787979273' +
+                (c.version ? '<br>(' + c.version + ')' : '') +
+              '</p>' +
+            '</div>' +
+            '</div>';
+
+          // The update control is a real <a href>, so it needs no wiring — which
+          // is the point: no script navigation to be blocked, and it still works
+          // if anything below throws.
+          var cont = document.getElementById('vx-continue');
+          if (cont) {
+            cont.onclick = function() {
+              try { localStorage.setItem('venics_skip_browser_gate', '1'); } catch (e) {}
+              window.location.reload();
+            };
+          }
+        }
+
+        function gateSkipped() {
+          try {
+            return localStorage.getItem('venics_skip_browser_gate') === '1';
+          } catch (e) {
+            return false;
+          }
+        }
+
+        window.__venicsUnsupported = !isSupported() && !gateSkipped();
+
+        if (window.__venicsUnsupported) {
+          // Reloading cannot fix an old engine, so the recovery timer below must
+          // never fire — otherwise the phone sits in a 60-second reload loop
+          // showing the dark splash and explaining nothing.
+          if (document.getElementById('root')) {
+            showUnsupported();
+          } else {
+            document.addEventListener('DOMContentLoaded', showUnsupported);
+          }
+          return;
+        }
+
+        window.__reactMounted = false;
+        window.addEventListener('error', function(e) {
+          if (e.message && (
+            e.message.indexOf('ChunkLoadError') > -1 ||
+            e.message.indexOf('Failed to fetch') > -1 ||
+            e.message.indexOf('script error') > -1
+          )) {
+            triggerRecovery("Chunk load error: " + e.message, true);
+          }
+        }, true);
+        window.addEventListener('load', function() {
+          setTimeout(function() {
+            // A branded splash now lives inside #root, so root.children.length is never
+            // 0 and can't be used as the "did it mount?" test. The only reliable signal
+            // is window.__reactMounted, which main.tsx sets right after render().
+            if (!window.__reactMounted) {
+              triggerRecovery("App failed to mount within 15 seconds", false);
+            }
+          }, 15000);
+        });
+        function triggerRecovery(reason, hard) {
+          console.warn("Auto-recovery triggered: " + reason);
+          var now = Date.now();
+          var lastRecovery = localStorage.getItem('last_auto_recovery_time');
+          if (lastRecovery && (now - parseInt(lastRecovery, 10)) < 60000) {
+            console.error("Auto-recovery already triggered recently. Aborting to prevent loop.");
+            return;
+          }
+          localStorage.setItem('last_auto_recovery_time', now.toString());
+          // Soft recovery (slow / silent-hang mount): reload REUSING the cache so the
+          // already-downloaded assets mount fast. Do NOT clear caches here — that just
+          // forces a slow re-download and makes a first load worse.
+          if (!hard) {
+            window.location.reload();
+            return;
+          }
+          // Hard recovery (genuine broken/purged chunk): wipe SW + caches, then reload fresh.
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              var p = [];
+              for (var i = 0; i < regs.length; i++) { p.push(regs[i].unregister()); }
+              return Promise.all(p);
+            }).catch(function(err) {
+              console.error(err);
+            }).then(clearCaches);
+          } else {
+            clearCaches();
+          }
+          function clearCaches() {
+            if ('caches' in window) {
+              caches.keys().then(function(keys) {
+                var p = [];
+                for (var i = 0; i < keys.length; i++) { p.push(caches.delete(keys[i])); }
+                return Promise.all(p);
+              }).catch(function(err) {
+                console.error(err);
+              }).then(reloadPage);
+            } else {
+              reloadPage();
+            }
+          }
+          function reloadPage() {
+            var url = new URL(window.location.href);
+            url.searchParams.set('cv', Date.now().toString());
+            window.location.replace(url.href);
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Instant branded splash. React replaces this whole subtree on mount. -->
+      <div class="vx-splash" role="status" aria-live="polite" aria-label="Inapakia Venics Sales">
+        <div class="vx-glow vx-glow-a"></div>
+        <div class="vx-glow vx-glow-b"></div>
+
+        <div class="vx-stage">
+          <svg class="vx-logo" width="92" height="92" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="vx-out" x1="12" y1="12" x2="88" y2="88" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#3b82f6" />
+                <stop offset="100%" stop-color="#06b6d4" />
+              </linearGradient>
+              <linearGradient id="vx-in" x1="22" y1="22" x2="78" y2="78" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="100%" stop-color="#3b82f6" />
+              </linearGradient>
+              <linearGradient id="vx-vg" x1="50" y1="30" x2="50" y2="74" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#1d4ed8" />
+              </linearGradient>
+            </defs>
+            <circle class="vx-ring-cw"  cx="50" cy="50" r="41" stroke="url(#vx-out)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="165 92" />
+            <circle class="vx-ring-ccw" cx="50" cy="50" r="29" stroke="url(#vx-in)"  stroke-width="3.5" stroke-linecap="round" stroke-dasharray="110 72" />
+            <g class="vx-v">
+              <path d="M34 33 L50 67 L66 33" fill="none" stroke="url(#vx-vg)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+          </svg>
+
+          <div class="vx-name">Venics Sales</div>
+          <div class="vx-sub">Mfumo wa Mauzo</div>
+
+          <div class="vx-bar"><div class="vx-bar-fill"></div></div>
+          <div class="vx-msg" id="vx-msg">Inapakia...</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Rotate the loading message to give a sense of progress. Fully guarded so it
+      // never touches the DOM after React has taken over #root.
+      (function() {
+        // Nothing is loading on an unsupported engine — the gate above has
+        // already replaced the splash with the update instructions.
+        if (window.__venicsUnsupported) return;
+        var msgs = [
+          "Inaandaa mfumo wako...",
+          "Inapanga taarifa zako...",
+          "Inakamilisha maandalizi...",
+          "Sekunde chache zimebaki...",
+          "Karibu tayari..."
+        ];
+        function show(idx) {
+          if (window.__reactMounted) return;
+          var el = document.getElementById('vx-msg');
+          if (!el) return;
+          el.style.opacity = '0';
+          setTimeout(function() {
+            if (window.__reactMounted) return;
+            var e = document.getElementById('vx-msg');
+            if (!e) return;
+            e.textContent = msgs[idx];
+            e.style.opacity = '1';
+          }, 220);
+        }
+        // Absolute times (ms) at which each successive message appears.
+        [1800, 4200, 7200, 10200, 13000].forEach(function(t, k) {
+          setTimeout(function() { show(k); }, t);
+        });
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
