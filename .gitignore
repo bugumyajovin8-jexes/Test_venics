@@ -1,0 +1,20 @@
+# Installed and built: they come back with `npm install` and `npm run build`.
+node_modules/
+build/
+dist/
+dev-dist/
+coverage/
+.vite/
+
+# Secrets stay on this computer.
+.env*
+!.env.example
+
+# Console logs saved while debugging.
+Dev/
+*.log
+
+.DS_Store
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+Screenshots/

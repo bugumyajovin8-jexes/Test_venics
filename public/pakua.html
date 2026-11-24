@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Download Venics Sales</title>
+<meta name="description" content="Download the Venics Sales app for Android phones.">
+<meta name="theme-color" content="#1e3a8a">
+<link rel="icon" href="/logo.png">
+<!--
+  The download page for the Mobile app (2026-11-24). Served by the Desktop
+  site at /pakua (vercel.json), outside the app's service worker
+  (vite.config.ts navigateFallbackDenylist).
+
+  It reads latest.json from Supabase storage (bucket app-releases, published by
+  the Mobile app's scripts/release.mjs), so the button always gives the newest
+  APK. Chrome's "this file may be harmful" and Android's "unknown apps" screens
+  cannot be switched off by any website: the steps below say what to tap. They
+  come only once — later updates arrive inside the app.
+
+  In English (the owner's choice, 2026-11-24): Chrome's and Android's screens
+  are in English for most users, and the steps name the buttons they will see.
+-->
+<style>
+  :root {
+    --bg: #f4f6fb; --card: #ffffff; --ink: #0f172a; --muted: #5b6475; --line: #e2e8f0;
+    --blue: #2563eb; --blue-d: #1e3a8a; --soft: #eff6ff; --amber: #92400e; --amber-bg: #fffbeb; --amber-line: #fde68a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0d1320; --card: #151c2b; --ink: #eef1f6; --muted: #9aa4b8; --line: #263145; --soft: #13213d; --amber: #fcd34d; --amber-bg: #29200e; --amber-line: #5b4517; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 0 16px 48px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+  header { background: linear-gradient(135deg, var(--blue-d), var(--blue)); color: #fff; padding: 28px 0 70px; }
+  header .wrap { padding-bottom: 0; display: flex; gap: 14px; align-items: center; }
+  header img { width: 56px; height: 56px; border-radius: 16px; background: #fff; padding: 6px; flex: none; }
+  header h1 { margin: 0; font-size: 24px; line-height: 1.2; }
+  header p { margin: 2px 0 0; color: #dbe6ff; font-size: 15px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 20px; box-shadow: 0 10px 30px rgba(15, 23, 42, .08); }
+  .main { margin-top: -50px; }
+  .btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 58px; border-radius: 16px; background: var(--blue); color: #fff; font-size: 18px; font-weight: 800; text-decoration: none; }
+  .btn:active { transform: scale(.99); }
+  .btn svg { width: 22px; height: 22px; }
+  .meta { margin: 12px 0 0; text-align: center; color: var(--muted); font-size: 14px; }
+  h2 { font-size: 18px; margin: 28px 4px 12px; }
+  ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  li { display: flex; gap: 14px; align-items: flex-start; }
+  .n { flex: none; width: 34px; height: 34px; border-radius: 12px; background: var(--soft); color: var(--blue); font-weight: 800; display: grid; place-items: center; }
+  li b { font-weight: 800; }
+  li p { margin: 0; }
+  li small { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .say { display: inline-block; margin-top: 8px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); font-size: 14px; }
+  .say i { font-style: normal; color: var(--blue); font-weight: 800; }
+  .note { margin-top: 16px; background: var(--amber-bg); border: 1px solid var(--amber-line); color: var(--amber); border-radius: 16px; padding: 14px 16px; font-size: 15px; }
+  .good { margin-top: 16px; background: var(--soft); border-radius: 16px; padding: 14px 16px; font-size: 15px; }
+  footer { margin-top: 28px; text-align: center; color: var(--muted); font-size: 14px; }
+  footer a { color: var(--blue); font-weight: 700; text-decoration: none; }
+  code { font-size: 11px; word-break: break-all; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <img src="/logo.png" alt="">
+    <div>
+      <h1>Venics Sales for your phone</h1>
+      <p>Sales, stock and debts for your business — even without internet</p>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="card main">
+    <a id="download" class="btn" href="https://rdprkqfxznajegttfsbg.supabase.co/storage/v1/object/public/app-releases/apk/venics.apk" download>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11"/><path d="m7 10.5 5 5 5-5"/><path d="M5 20h14"/></svg>
+      Download the app
+    </a>
+    <p id="meta" class="meta">For Android phones</p>
+  </div>
+
+  <h2>4 easy steps</h2>
+  <div class="card">
+    <ol>
+      <li><span class="n">1</span><p>Tap <b>Download the app</b> above.</p></li>
+      <li><span class="n">2</span>
+        <p>Chrome warns that this file may be harmful. Tap
+          <br><span class="say"><i>Download anyway</i></span>
+          <small>Chrome shows this for every app that does not come from the Play Store. It is safe: the file comes straight from Venics.</small>
+        </p>
+      </li>
+      <li><span class="n">3</span>
+        <p>Open the downloaded file. If your phone asks for permission, tap <b>Settings</b> and turn on
+          <br><span class="say"><i>Allow from this source</i></span>
+          <small>then go back.</small>
+        </p>
+      </li>
+      <li><span class="n">4</span>
+        <p>Tap <b>Install</b>.
+          <small>If Play Protect asks, choose <b>Install anyway</b>.</small>
+        </p>
+      </li>
+    </ol>
+  </div>
+
+  <div class="good"><b>Only once.</b> Future updates come by themselves inside the app: you won't need this page again, and you won't see these warnings again.</div>
+  <div class="note">This file is for <b>Android</b> phones only. Have an iPhone? Contact us.</div>
+
+  <footer>
+    <p>Help: <a href="tel:0787979273">0787 979 273</a> (call or WhatsApp)</p>
+    <p id="hash"></p>
+  </footer>
+</main>
+
+<script>
+  // The newest APK from latest.json; the button already points at the
+  // always-newest copy, so the page works even if this fails.
+  (function () {
+    var base = 'https://rdprkqfxznajegttfsbg.supabase.co/storage/v1/object/public/app-releases/';
+    fetch(base + 'latest.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (latest) {
+        var apk = latest && latest.apk;
+        if (!apk || !apk.url) return;
+        document.getElementById('download').href = apk.url;
+        var bits = ['Version ' + apk.versionName];
+        if (apk.size) bits.push((apk.size / 1048576).toFixed(1) + ' MB');
+        if (apk.date) bits.push(new Date(apk.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }));
+        document.getElementById('meta').textContent = bits.join(' · ') + ' · Android';
+        if (apk.sha256) document.getElementById('hash').innerHTML = 'SHA-256: <code>' + apk.sha256.replace(/[^0-9a-f]/gi, '') + '</code>';
+      })
+      .catch(function () { /* keep the always-newest link */ });
+  })();
+</script>
+</body>
+</html>

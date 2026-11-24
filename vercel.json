@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/pakua",
+      "destination": "/pakua.html"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
